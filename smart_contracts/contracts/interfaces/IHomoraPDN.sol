@@ -28,4 +28,7 @@ interface IHomoraPDN {
         uint16 assetBorrowFactor; // asset token borrow factor on Homora
     }
 
+    struct Position {
+        uint256 shareAmount;
+    }
 }
