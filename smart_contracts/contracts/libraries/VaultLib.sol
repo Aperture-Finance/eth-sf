@@ -11,12 +11,15 @@ library VaultLib {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
-    function uniSqrtPriceX96(IUniswapV3Pool pool) internal view returns (uint256 sqrtPriceX96) {
+    uint256 public constant X96 = 2**96;
+
+
+    function uniSqrtPriceX96(IUniswapV3Pool pool) internal view returns (uint160 sqrtPriceX96) {
         (sqrtPriceX96, , , , , , ) = pool.slot0();
     }
 
-    function mulSqrtPriceX96(uint256 amount, uint256 sqrtPriceBx96) internal pure returns (uint256) {
-        return;
+    function mulSquareX96(uint256 amount, uint160 sqrtPriceBx96) internal pure returns (uint256) {
+        return amount.mulDiv(sqrtPriceBx96.mulDiv(sqrtPriceBx96, ));
     }
 
     function deltaNeutralMath(
@@ -26,11 +29,11 @@ library VaultLib {
         uint256 L
     ) internal view returns (uint256) {
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
-        uint256 sqrtPriceBx96 = uniSqrtPriceX96(pool);
+        uint160 sqrtPriceBx96 = uniSqrtPriceX96(pool);
+        uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
-
+            equity += priceB * amtBUser;
         }
-        uint256 equity = amtAUser + priceB * amtBUser;
         uint256 amtABorrow;
         uint256 amtBBorrow;
 
