@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/IHomoraPDN.sol";
+import "./interfaces/homorav2/banks/IBank.sol";
+import "./interfaces/homorav2/spells/IUniswapV3Spell.sol";
 import "./interfaces/uniswapv3/IUniswapV3Pool.sol";
 
 contract UniV3PDNVault {
@@ -35,11 +37,28 @@ contract UniV3PDNVault {
     constructor(
         address stableToken,
         address assetToken,
-        address _bank
+        address bank,
+        address spell,
+        address stableToken,
+        address assetToken
     ) payable {
         pairInfo.stableToken = stableToken;
         pairInfo.assetToken = assetToken;
-        bank = _bank;
+        require(bank != address(0));
+        contractInfo.bank = bank;
+        contractInfo.oracle = IBank(bank).oracle();
+        require(spell != address(0));
+        contractInfo.spell = spell;
+        contractInfo.router = IUniswapV3Spell(spell).router();
+//        pairInfo.lpToken = IUniswapV3Spell(spell).pairs(
+//            stableToken,
+//            assetToken
+//        );
+//        require(IBank(bank).support(pairInfo.lpToken));
+        require(IBank(bank).support(stableToken));
+        pairInfo.stableToken = stableToken;
+        require(IBank(bank).support(assetToken));
+        pairInfo.assetToken = assetToken;
     }
 
     function setConfig(uint256 _leverageLevel, uint256 _debtRatioWidth)
@@ -62,8 +81,15 @@ contract UniV3PDNVault {
         pure
         returns (uint256)
     {
-        // return amount.mulDiv(sqrtPriceBx96.mulDiv(sqrtPriceBx96, ));
-        return 0;
+        return amount.mulDiv(sqrtPriceBx96, X96).mulDiv(sqrtPriceBx96, X96);
+    }
+
+    function divSquareX96(uint256 amount, uint160 sqrtPriceBx96)
+        internal
+        pure
+        returns (uint256)
+    {
+        return amount.mulDiv(X96, sqrtPriceBx96).mulDiv(X96, sqrtPriceBx96);
     }
 
     function deltaNeutralMath(
@@ -76,7 +102,9 @@ contract UniV3PDNVault {
         uint160 sqrtPriceBx96 = uniSqrtPriceX96(pool);
         uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
-            // equity += priceB * amtBUser;
+             equity += mulSquareX96(amtBUser, sqrtPriceBx96);
+        } else {
+            equity += divSquareX96(amtBUser, sqrtPriceBx96);
         }
         uint256 amtABorrow;
         uint256 amtBBorrow;

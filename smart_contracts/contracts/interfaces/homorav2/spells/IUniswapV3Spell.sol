@@ -82,4 +82,11 @@ interface IUniswapV3Spell {
     /// @dev collect fee and increase liquidity into the position.
     /// @param _params reinvest parameters.
     function reinvest(ReinvestParams calldata _params) external;
+
+    function pairs(address tokenA, address tokenB)
+        external
+        view
+        returns (address);
+
+    function router() external view returns (address);
 }
