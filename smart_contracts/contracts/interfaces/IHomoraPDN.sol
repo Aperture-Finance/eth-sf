@@ -17,6 +17,4 @@ interface IHomoraPDN {
         address assetToken; // token 1
         address lpToken; // ERC-721 LP token address
     }
-
-
 }
