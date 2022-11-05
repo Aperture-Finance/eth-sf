@@ -15,16 +15,16 @@ interface IUniswapV3OptimalSwap {
     /// @param _tickUpper desired tick uppper (to provide lp)
     function getOptimalSwapAmt(
         IUniswapV3Pool _pool,
-        uint _amt0In,
-        uint _amt1In,
+        uint256 _amt0In,
+        uint256 _amt1In,
         int24 _tickLower,
         int24 _tickUpper
     )
         external
         view
         returns (
-            uint amtSwap,
-            uint amtOut,
+            uint256 amtSwap,
+            uint256 amtOut,
             bool isZeroForOne
         );
 

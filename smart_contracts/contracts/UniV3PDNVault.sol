@@ -49,12 +49,19 @@ contract UniV3PDNVault {
         debtRatioWidth = _debtRatioWidth;
     }
 
-
-    function uniSqrtPriceX96(IUniswapV3Pool pool) internal view returns (uint160 sqrtPriceX96) {
+    function uniSqrtPriceX96(IUniswapV3Pool pool)
+        internal
+        view
+        returns (uint160 sqrtPriceX96)
+    {
         (sqrtPriceX96, , , , , , ) = pool.slot0();
     }
 
-    function mulSquareX96(uint256 amount, uint160 sqrtPriceBx96) internal pure returns (uint256) {
+    function mulSquareX96(uint256 amount, uint160 sqrtPriceBx96)
+        internal
+        pure
+        returns (uint256)
+    {
         // return amount.mulDiv(sqrtPriceBx96.mulDiv(sqrtPriceBx96, ));
         return 0;
     }
@@ -63,7 +70,7 @@ contract UniV3PDNVault {
         IHomoraPDN.PairInfo memory pairInfo,
         uint256 amtAUser,
         uint256 amtBUser,
-        uint256 L
+        uint256 leverage
     ) internal view returns (uint256) {
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceBx96 = uniSqrtPriceX96(pool);
@@ -73,8 +80,8 @@ contract UniV3PDNVault {
         }
         uint256 amtABorrow;
         uint256 amtBBorrow;
-
     }
+
     function deposit(uint256 stableDepositAmount) public {
         if (stableDepositAmount > 0) {
             IERC20(pairInfo.stableToken).safeTransferFrom(
@@ -85,7 +92,8 @@ contract UniV3PDNVault {
         }
 
         // Call library to finish core deposit function.
-        uint256 pidAfter = 20; // Function should return actual pid from Homora.
+        uint256 pidAfter = 20;
+        // Function should return actual pid from Homora.
         pid = pid == pidAfter ? pid : pidAfter;
     }
 
