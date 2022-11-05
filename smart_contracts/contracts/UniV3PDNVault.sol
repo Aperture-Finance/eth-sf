@@ -7,18 +7,14 @@ import "./interfaces/IHomoraPDN.sol";
 contract UniV3PDNVault {
     using SafeERC20 for IERC20;
 
-    IHomoraPDN.PairInfo pairInfo;
-    address bank;
+    IHomoraPDN.PairInfo public pairInfo;
+    // bank, oracle, router, spell
+    IHomoraPDN.ContractInfo public contractInfo;
+
+    IHomoraPDN.VaultConfig public vaultConfig;
+
     // Homora position id.
-    uint256 pid;
-
-    uint256 leverageLevel;
-    uint256 public targetDebtRatio; // target debt ratio * 10000, 92% -> 9200
-    uint256 public debtRatioWidth;
-
-    uint256 public minDebtRatio; // minimum debt ratio * 10000
-    uint256 public maxDebtRatio; // maximum debt ratio * 10000
-    uint256 public deltaThreshold; // delta deviation threshold in percentage * 10000
+    uint256 public pid;
 
     constructor(
         address stableToken,
