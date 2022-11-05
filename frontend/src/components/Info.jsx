@@ -18,9 +18,9 @@ const Text = styled.div`
   margin-top:25px;
   line-height: 1.6;
 `
-const Red = styled.span`
-  color: #F35979;
-`
+// const Red = styled.span`
+//   color: #F35979;
+// `
 const Yellow = styled.span`
   color: #FBCC1A;
 `
