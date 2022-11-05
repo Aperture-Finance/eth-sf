@@ -19,7 +19,8 @@ library VaultLib {
     }
 
     function mulSquareX96(uint256 amount, uint160 sqrtPriceBx96) internal pure returns (uint256) {
-        return amount.mulDiv(sqrtPriceBx96.mulDiv(sqrtPriceBx96, ));
+        // return amount.mulDiv(sqrtPriceBx96.mulDiv(sqrtPriceBx96, ));
+        return 0;
     }
 
     function deltaNeutralMath(
@@ -32,7 +33,7 @@ library VaultLib {
         uint160 sqrtPriceBx96 = uniSqrtPriceX96(pool);
         uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
-            equity += priceB * amtBUser;
+            // equity += priceB * amtBUser;
         }
         uint256 amtABorrow;
         uint256 amtBBorrow;

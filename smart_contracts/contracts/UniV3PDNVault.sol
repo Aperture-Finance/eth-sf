@@ -7,7 +7,7 @@ import "./interfaces/IHomoraPDN.sol";
 contract UniV3PDNVault {
     using SafeERC20 for IERC20;
 
-    PairInfo pairInfo;
+    IHomoraPDN.PairInfo pairInfo;
     address bank;
     // Homora position id.
     uint256 pid;

@@ -4,7 +4,7 @@
 pragma solidity 0.8.16;
 
 import './IUniswapV3Factory.sol';
-import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC721/IERC721.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 interface IUniswapV3PositionManager is IERC721 {
   function factory() external view returns (IUniswapV3Factory);

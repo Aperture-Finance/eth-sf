@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.16;
 
-import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC1155/IERC1155.sol';
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import '../../uniswapv3/IUniswapV3PositionManager.sol';
 import '../IGovernable.sol';
 
