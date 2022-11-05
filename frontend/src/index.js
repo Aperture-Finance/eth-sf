@@ -1,12 +1,12 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './components/App';
-import reportWebVitals from './reportWebVitals';
-import { WagmiConfig } from 'wagmi'
-import { client } from './wagmi';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./components/App";
+import reportWebVitals from "./reportWebVitals";
+import { WagmiConfig } from "wagmi";
+import { client } from "./wagmi";
+import "./index.css";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <WagmiConfig client={client}>
@@ -14,6 +14,5 @@ root.render(
     </WagmiConfig>
   </React.StrictMode>
 );
-
 
 reportWebVitals();

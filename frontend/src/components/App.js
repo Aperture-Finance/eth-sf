@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import { Withdraw } from './Withdraw'
-import { Info } from './Info';
-import { ConnectWallet } from './ConnectWallet';
+import { Withdraw } from "./Withdraw";
+import { Info } from "./Info";
+import { ConnectWallet } from "./ConnectWallet";
 
 const Body = styled.div`
   positoin: relative;
@@ -10,18 +10,18 @@ const Body = styled.div`
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-`
+`;
 
 const LeftContainer = styled.div`
   padding: 10%;
   margin: auto;
-`
+`;
 function App() {
   return (
     <Body>
       <LeftContainer>
         <Info />
-        <ConnectWallet/>
+        <ConnectWallet />
       </LeftContainer>
       <Withdraw />
     </Body>
