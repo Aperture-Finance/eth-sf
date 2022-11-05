@@ -13,8 +13,6 @@ export const ConnectWallet = () => {
   const { connect } = useConnect({ connector: new InjectedConnector() })
 
   return <Container>
-    <Button onClick={() => { connect(); console.log('click') }}>Connect Wallet Here</Button>
-    <br />is wallet connected: {isConnected ? "true" : "false"} <br />
-    wallet address: {address}
+    <Button onClick={() => { connect(); }}>{isConnected ? address : "Connect Wallet Here"}</Button>
   </Container>
 }
