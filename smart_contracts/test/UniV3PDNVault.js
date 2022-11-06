@@ -44,6 +44,15 @@ describe("UniV3PDNVault", function () {
     await homoraBank.connect(governorSigner).setWhitelistUsers([vault.address], [true]);
     console.log("Whitelisted vault.");
 
+    await homoraBank.connect(governorSigner).setCreditLimits([
+      [vault.address, USDC_ADDR, BigNumber.from(10).pow(6).mul(100000), ethers.constants.AddressZero],
+      [vault.address, WETH_ADDR, BigNumber.from(10).pow(18).mul(100000), ethers.constants.AddressZero]
+    ]);
+    console.log("Credit limits set.");
+
+    const bankStatus = await homoraBank.bankStatus();
+    console.log("Bank status: ", bankStatus);
+
     // Approve token.
     const USDC = new ethers.Contract(USDC_ADDR, ERC20_ABI, wallet);
     await USDC.approve(vault.address, BigNumber.from(10).pow(12));
