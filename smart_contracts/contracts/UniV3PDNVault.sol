@@ -6,7 +6,6 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "./interfaces/IHomoraPDN.sol";
 import "./interfaces/homorav2/IOracle.sol";
 import "./interfaces/homorav2/banks/IBank.sol";
 import "./interfaces/homorav2/spells/IUniswapV3Spell.sol";
@@ -19,6 +18,17 @@ import "./libraries/UniswapV3TickMath.sol";
 contract UniV3PDNVault {
     using SafeERC20 for IERC20;
     using Math for uint256;
+
+    struct VaultConfig {
+        uint16 leverageLevel; // target leverage * 10000
+        uint16 targetDebtRatio; // target debt ratio * 10000, 92% -> 9200
+        uint16 minDebtRatio; // minimum debt ratio * 10000
+        uint16 maxDebtRatio; // maximum debt ratio * 10000
+        uint16 deltaThreshold; // delta deviation threshold in percentage * 10000
+        uint16 collateralFactor; // LP collateral factor on Homora
+        uint16 stableBorrowFactor; // stable token borrow factor on Homora
+        uint16 assetBorrowFactor; // asset token borrow factor on Homora
+    }
 
     // --- constants ---
     uint256 public constant X96 = 2 ** 96;
@@ -37,7 +47,7 @@ contract UniV3PDNVault {
     address assetToken; // token 1
     IUniswapV3Pool public pool; // ERC-721 LP token address
 
-    IHomoraPDN.VaultConfig public vaultConfig;
+    VaultConfig public vaultConfig;
 
     // --- state ---
     uint256 public totalShare;
@@ -121,11 +131,17 @@ contract UniV3PDNVault {
     ) internal view returns (IUniswapV3Spell.OpenPositionParams memory params) {
         params.fee = 500;
         uint160 sqrtPriceX96 = sqrtToken0PriceX96();
-        int24 tickUpper = UniswapV3TickMath.getTickAtSqrtRatio(
-            (sqrtPriceX96 * uint160(Math.sqrt(priceRatioBps))) / SQRT_MAX_BPS
+        params.tickUpper = matchTickSpacing(
+            UniswapV3TickMath.getTickAtSqrtRatio(
+                (sqrtPriceX96 * uint160(Math.sqrt(priceRatioBps))) /
+                    SQRT_MAX_BPS
+            )
         );
-        int24 tickLower = UniswapV3TickMath.getTickAtSqrtRatio(
-            (sqrtPriceX96 * SQRT_MAX_BPS) / uint160(Math.sqrt(priceRatioBps))
+        params.tickLower = matchTickSpacing(
+            UniswapV3TickMath.getTickAtSqrtRatio(
+                (sqrtPriceX96 * SQRT_MAX_BPS) /
+                    uint160(Math.sqrt(priceRatioBps))
+            )
         );
 
         uint16 leverageLevel = vaultConfig.leverageLevel;
@@ -170,8 +186,8 @@ contract UniV3PDNVault {
             pool,
             params.amt0User + params.amt0Borrow,
             params.amt1User + params.amt1Borrow,
-            tickLower,
-            tickUpper
+            params.tickLower,
+            params.tickUpper
         );
         params.deadline = block.timestamp;
     }
@@ -285,4 +301,6 @@ contract UniV3PDNVault {
                     getCollateralETHValue(user)
             );
     }
+
+    receive() external payable {}
 }

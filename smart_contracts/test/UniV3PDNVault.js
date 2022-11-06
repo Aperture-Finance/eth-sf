@@ -2,22 +2,24 @@ const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 const {
-  POOL_ABI,
-  USDC_ETH_POOL_ADDR,
+  ETH_USDC_POOL_ADDR,
   WETH_ADDR,
   USDC_ADDR,
   BANK_ADDR,
   SPELL_ADDR,
   ETH_PRV_KEY_1,
   OPTIMAL_SWAP_ADDR,
-  OPTIMAL_SWAP_ABI,
-  ERC20_ABI,
 } = require("../constants");
 const fs = require("fs");
 
 const BANK_ABI = JSON.parse(
   fs.readFileSync(
     "data/abi/contracts/interfaces/homorav2/banks/IBankOP.sol/IBankOP.json"
+  )
+);
+const ERC20_ABI = JSON.parse(
+  fs.readFileSync(
+    "data/abi/@openzeppelin/contracts/token/ERC20/IERC20.sol/IERC20.json"
   )
 );
 
@@ -73,7 +75,7 @@ describe("UniV3PDNVault", function () {
       SPELL_ADDR,
       USDC_ADDR,
       WETH_ADDR,
-      USDC_ETH_POOL_ADDR,
+      ETH_USDC_POOL_ADDR,
       OPTIMAL_SWAP_ADDR
     );
     await vault.deployed();
