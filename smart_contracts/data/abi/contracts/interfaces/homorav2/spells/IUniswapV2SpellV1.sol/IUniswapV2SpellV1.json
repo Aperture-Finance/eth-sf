@@ -1,0 +1,7 @@
+[
+  "function addLiquidityWERC20(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256)) payable",
+  "function addLiquidityWStakingRewards(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),address)",
+  "function harvestWStakingRewards(address)",
+  "function removeLiquidityWERC20(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256))",
+  "function removeLiquidityWStakingRewards(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256),address)"
+]

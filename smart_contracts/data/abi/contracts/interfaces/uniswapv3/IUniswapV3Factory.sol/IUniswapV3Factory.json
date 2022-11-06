@@ -1,0 +1,8 @@
+[
+  "function createPool(address,address,uint24) returns (address)",
+  "function enableFeeAmount(uint24,int24)",
+  "function feeAmountTickSpacing(uint24) view returns (int24)",
+  "function getPool(address,address,uint24) view returns (address)",
+  "function owner() view returns (address)",
+  "function setOwner(address)"
+]

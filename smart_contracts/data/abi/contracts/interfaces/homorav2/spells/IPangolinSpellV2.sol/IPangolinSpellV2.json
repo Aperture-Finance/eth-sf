@@ -1,0 +1,5 @@
+[
+  "function addLiquidityWMiniChef(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256) payable",
+  "function harvestWMiniChefRewards()",
+  "function removeLiquidityWMiniChef(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256))"
+]

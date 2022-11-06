@@ -1,0 +1,8 @@
+[
+  "function WETH9() view returns (address)",
+  "function exactInput(tuple(bytes,address,uint256,uint256,uint256)) payable returns (uint256)",
+  "function exactInputSingle(tuple(address,address,uint24,address,uint256,uint256,uint256,uint160)) payable returns (uint256)",
+  "function exactOutput(tuple(bytes,address,uint256,uint256,uint256)) payable returns (uint256)",
+  "function exactOutputSingle(tuple(address,address,uint24,address,uint256,uint256,uint256,uint160)) payable returns (uint256)",
+  "function factory() view returns (address)"
+]

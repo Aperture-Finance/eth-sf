@@ -1,0 +1,5 @@
+[
+  "function addLiquidityWMasterChef(bytes32,tuple(uint256[],uint256,uint256[],uint256,uint256),uint256) payable",
+  "function harvestWMasterChef()",
+  "function removeLiquidityWMasterChef(bytes32,tuple(uint256,uint256,uint256[],uint256,uint256[]))"
+]

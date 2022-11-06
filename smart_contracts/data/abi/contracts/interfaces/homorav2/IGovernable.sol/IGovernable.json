@@ -1,0 +1,6 @@
+[
+  "function acceptGovernor()",
+  "function governor() view returns (address)",
+  "function pendingGovernor() view returns (address)",
+  "function setPendingGovernor(address)"
+]

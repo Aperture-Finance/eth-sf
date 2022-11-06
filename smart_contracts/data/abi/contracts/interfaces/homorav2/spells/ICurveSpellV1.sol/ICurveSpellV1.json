@@ -1,0 +1,5 @@
+[
+  "function addLiquidity3(address,uint256[3],uint256,uint256[3],uint256,uint256,uint256,uint256)",
+  "function harvest()",
+  "function removeLiquidity3(address,uint256,uint256,uint256[3],uint256,uint256[3])"
+]

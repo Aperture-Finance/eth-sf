@@ -1,0 +1,12 @@
+[
+  "function addLiquidity(tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,uint256)) payable",
+  "function bank() view returns (address)",
+  "function closePosition(tuple(uint256,uint256,uint256,bool))",
+  "function factory() view returns (address)",
+  "function harvest(bool)",
+  "function openPosition(tuple(address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,uint256)) payable",
+  "function reinvest(tuple(uint256,uint256,bool,uint256,uint256,uint256))",
+  "function removeLiquidity(tuple(uint256,uint256,uint256,uint256,uint256,uint256))",
+  "function router() view returns (address)",
+  "function wrapper() view returns (address)"
+]

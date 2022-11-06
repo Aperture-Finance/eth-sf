@@ -35,4 +35,12 @@ module.exports = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
+  abiExporter: {
+    path: "./data/abi",
+    runOnCompile: true,
+    clear: true,
+    flat: false,
+    spacing: 2,
+    pretty: true,
+  },
 };

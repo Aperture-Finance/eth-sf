@@ -1,0 +1,4 @@
+[
+  "function getUnderlyingRate(uint256) view returns (uint256)",
+  "function getUnderlyingToken(uint256) view returns (address)"
+]

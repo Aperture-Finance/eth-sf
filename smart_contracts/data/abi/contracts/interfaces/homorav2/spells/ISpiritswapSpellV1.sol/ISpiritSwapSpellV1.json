@@ -1,0 +1,5 @@
+[
+  "function addLiquidityWMasterChef(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256) payable",
+  "function harvestWMasterChef()",
+  "function removeLiquidityWMasterChef(address,address,tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256))"
+]

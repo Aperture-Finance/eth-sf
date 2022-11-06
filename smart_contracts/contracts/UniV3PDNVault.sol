@@ -31,7 +31,7 @@ contract UniV3PDNVault {
 
     // --- state ---
     uint256 public totalShare;
-    mapping(uint16 => mapping(uint128 => IHomoraPDN.Position)) public positions;
+    mapping(address => uint256) public positions;
     // Homora position id.
     uint256 public position_id;
 
@@ -169,8 +169,8 @@ contract UniV3PDNVault {
             stableDepositAmount,
             0
         );
-        position_id = IBank(contractInfo.bank).execute(
-            position_id,
+        positions[msg.sender] = IBank(contractInfo.bank).execute(
+            positions[msg.sender],
             contractInfo.spell,
             abi.encodeWithSelector(
                 IUniswapV3Spell.openPosition.selector,
@@ -190,7 +190,7 @@ contract UniV3PDNVault {
     function reinvest() external {}
 
     /// @notice Vault position on Homora
-    function getPositionInfo()
+    function getPositionInfo(address user)
         public
         view
         returns (
@@ -200,20 +200,20 @@ contract UniV3PDNVault {
         )
     {
         (, collToken, collId, collateralSize) = IBank(contractInfo.bank)
-            .getPositionInfo(position_id);
+            .getPositionInfo(positions[user]);
     }
 
-    function getCollateralETHValue() public view returns (uint256) {
-        return IBank(contractInfo.bank).getCollateralETHValue(position_id);
+    function getCollateralETHValue(address user) public view returns (uint256) {
+        return IBank(contractInfo.bank).getCollateralETHValue(positions[user]);
     }
 
-    function getBorrowETHValue() public view returns (uint256) {
-        return IBank(contractInfo.bank).getBorrowETHValue(position_id);
+    function getBorrowETHValue(address user) public view returns (uint256) {
+        return IBank(contractInfo.bank).getBorrowETHValue(positions[user]);
     }
 
     /// @notice Calculate the debt ratio as seen by Homora Bank, multiplied by 1e4
-    function getDebtRatio() external view returns (uint16) {
+    function getDebtRatio(address user) external view returns (uint16) {
         return
-            uint16((getBorrowETHValue() * MAX_BPS) / getCollateralETHValue());
+            uint16((getBorrowETHValue(user) * MAX_BPS) / getCollateralETHValue(user));
     }
 }

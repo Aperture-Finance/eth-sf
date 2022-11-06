@@ -1,0 +1,23 @@
+[
+  "event Approval(address indexed,address indexed,uint256 indexed)",
+  "event ApprovalForAll(address indexed,address indexed,bool)",
+  "event Transfer(address indexed,address indexed,uint256 indexed)",
+  "function WETH9() view returns (address)",
+  "function approve(address,uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function burn(uint256) payable",
+  "function collect(tuple(uint256,address,uint128,uint128)) payable returns (uint256, uint256)",
+  "function decreaseLiquidity(tuple(uint256,uint128,uint256,uint256,uint256)) payable returns (uint256, uint256)",
+  "function factory() view returns (address)",
+  "function getApproved(uint256) view returns (address)",
+  "function increaseLiquidity(tuple(uint256,uint256,uint256,uint256,uint256,uint256)) payable returns (uint128, uint256, uint256)",
+  "function isApprovedForAll(address,address) view returns (bool)",
+  "function mint(tuple(address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256)) payable returns (uint256, uint128, uint256, uint256)",
+  "function ownerOf(uint256) view returns (address)",
+  "function positions(uint256) view returns (uint96, address, address, address, uint24, int24, int24, uint128, uint256, uint256, uint128, uint128)",
+  "function safeTransferFrom(address,address,uint256)",
+  "function safeTransferFrom(address,address,uint256,bytes)",
+  "function setApprovalForAll(address,bool)",
+  "function supportsInterface(bytes4) view returns (bool)",
+  "function transferFrom(address,address,uint256)"
+]
