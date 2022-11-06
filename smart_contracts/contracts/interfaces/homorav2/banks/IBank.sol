@@ -64,21 +64,23 @@ interface IBank is IGovernable {
     /// NOTE: Credit limits are only applied specifically for whitelisted users.
     function whitelistedUserCreditLimits(address user, address token)
         external
+        view
         returns (uint256);
 
     /// @dev Return borrow share from user address and token.
     function whitelistedUserBorrowShares(address user, address token)
         external
+        view
         returns (uint256);
 
     /// @dev Return whether the user was ever whitelisted
-    function everWhitelistedUsers(address user) external returns (address);
+    function everWhitelistedUsers(address user) external view returns (address);
 
     /// @dev Return worker address to withdraw reserve.
-    function worker() external returns (address);
+    function worker() external view returns (address);
 
     /// @dev Return exec address.
-    function exec() external returns (address);
+    function exec() external view returns (address);
 
     /// @dev Return the current executor (the owner of the current position).
     function EXECUTOR() external view returns (address);
