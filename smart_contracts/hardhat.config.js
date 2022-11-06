@@ -24,9 +24,12 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      forking: {
-        url: "https://opt-mainnet.g.alchemy.com/v2/RWdtPbSEoTigtP_JqflHSnbIY8XsbRF4",
-      },
+      // forking: {
+      //   url: "https://opt-mainnet.g.alchemy.com/v2/RWdtPbSEoTigtP_JqflHSnbIY8XsbRF4",
+      // },
+    },
+    tenderly: {
+      url: "https://rpc.tenderly.co/fork/3285a8b9-7dc8-4e68-bfe9-bd9f9a76358c",
     },
   },
   paths: {
