@@ -24,14 +24,21 @@ describe("UniV3PDNVault", function () {
     const homoraBankGovernor = await homoraBank.governor();
     console.log("governor: ", homoraBankGovernor);
     const governorSigner = await ethers.getImpersonatedSigner(homoraBankGovernor);
+    const homoraBankExec = await homoraBank.exec();
+    console.log("exec: ", homoraBankExec);
+    const execSigner = await ethers.getImpersonatedSigner(homoraBankExec);
 
     await wallet.sendTransaction({
       to: homoraBankGovernor,
-      value: ethers.utils.parseEther("100"),
+      value: ethers.utils.parseEther("10"),
+    });
+    await wallet.sendTransaction({
+      to: homoraBankExec,
+      value: ethers.utils.parseEther("10"),
     });
 
-    // await homoraBank.connect(wallet).setAllowContractCalls(true);
-    // console.log("set allow contract calls");
+    await homoraBank.connect(execSigner).setAllowContractCalls(true);
+    console.log("set allow contract calls");
     const allowContractCallsResult = await homoraBank.allowContractCalls();
     console.log("allowContractCallsResult: ", allowContractCallsResult);
 
@@ -54,6 +61,9 @@ describe("UniV3PDNVault", function () {
 
     const bankStatus = await homoraBank.bankStatus();
     console.log("Bank status: ", bankStatus);
+
+    const allowBorrowStatus = await homoraBank.allowBorrowStatus();
+    console.log("allowBorrowStatus: ", allowBorrowStatus);
 
     // Approve token.
     const USDC = new ethers.Contract(USDC_ADDR, ERC20_ABI, wallet);
