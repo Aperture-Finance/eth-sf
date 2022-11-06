@@ -13,7 +13,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 2**32-1,
+        runs: 2 ** 32 - 1,
         details: {
           yul: true,
         },

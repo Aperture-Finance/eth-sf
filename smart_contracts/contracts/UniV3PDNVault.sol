@@ -69,7 +69,7 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         uint256 stableWithdrawAmount,
         uint256 assetWithdrawAmount
     );
-    event LogRebalance();
+    event LogRebalance(address user, uint256 position_id);
     event LogReinvest(address user, uint256 position_id);
 
     error Invalid_Debt_Ratio();
@@ -110,7 +110,6 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         uint16 _leverage,
         uint16 _debtRatioWidth
     ) external onlyOwner {
-        IBaseOracle source = oracle.source();
         (, uint16 collateralFactor, ) = oracle.tokenFactors(address(pool));
         (uint16 stableBorrowFactor, , ) = oracle.tokenFactors(stableToken);
         (uint16 assetBorrowFactor, , ) = oracle.tokenFactors(assetToken);
@@ -236,6 +235,27 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         params.deadline = block.timestamp;
     }
 
+    function depositInternal(
+        uint16 priceRatioBps,
+        uint256 position_id
+    ) internal returns (uint256) {
+        IUniswapV3Spell.OpenPositionParams memory params = deltaNeutralMath(
+            priceRatioBps,
+            IERC20(stableToken).balanceOf(address(this)),
+            IERC20(assetToken).balanceOf(address(this))
+        );
+        position_id = bank.execute(
+            position_id,
+            address(spell),
+            abi.encodeWithSelector(
+                IUniswapV3Spell.openPosition.selector,
+                params
+            )
+        );
+        positions[msg.sender] = position_id;
+        return position_id;
+    }
+
     function deposit(
         uint16 priceRatioBps,
         uint256 stableDepositAmount
@@ -247,31 +267,18 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
                 stableDepositAmount
             );
             IERC20(stableToken).approve(address(bank), stableDepositAmount);
+            uint256 position_id = depositInternal(
+                priceRatioBps,
+                positions[msg.sender]
+            );
+            emit LogDeposit(msg.sender, position_id, stableDepositAmount);
         }
-
-        IUniswapV3Spell.OpenPositionParams memory params = deltaNeutralMath(
-            priceRatioBps,
-            stableDepositAmount,
-            0
-        );
-
-        uint256 position_id = bank.execute(
-            positions[msg.sender],
-            address(spell),
-            abi.encodeWithSelector(
-                IUniswapV3Spell.openPosition.selector,
-                params
-            )
-        );
-        positions[msg.sender] = position_id;
-
-        emit LogDeposit(msg.sender, position_id, stableDepositAmount);
     }
 
-    function withdraw() external nonReentrant {
+    function withdrawInternal() internal returns (uint256 position_id) {
         IUniswapV3Spell.ClosePositionParams memory params = IUniswapV3Spell
             .ClosePositionParams(0, 0, block.timestamp, true);
-        uint256 position_id = positions[msg.sender];
+        position_id = positions[msg.sender];
         bank.execute(
             position_id,
             address(spell),
@@ -280,6 +287,10 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
                 params
             )
         );
+    }
+
+    function withdraw() external nonReentrant {
+        uint256 position_id = withdrawInternal();
         uint256 stableBalance = IERC20(stableToken).balanceOf(address(this));
         if (stableBalance > 0) {
             IERC20(stableToken).safeTransfer(msg.sender, stableBalance);
@@ -292,7 +303,22 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         emit LogWithdraw(msg.sender, position_id, stableBalance, assetBalance);
     }
 
-    function rebalance() external nonReentrant {}
+    function rebalance(uint16 priceRatioBps) external nonReentrant {
+        withdrawInternal();
+
+        uint256 stableBalance = IERC20(stableToken).balanceOf(address(this));
+        if (stableBalance > 0) {
+            IERC20(stableToken).approve(address(bank), stableBalance);
+        }
+        uint256 assetBalance = IERC20(assetToken).balanceOf(address(this));
+        if (assetBalance > 0) {
+            IERC20(assetToken).approve(address(bank), assetBalance);
+        }
+
+        uint256 position_id = depositInternal(priceRatioBps, 0);
+
+        emit LogRebalance(msg.sender, position_id);
+    }
 
     function reinvest() external nonReentrant {
         IUniswapV3Spell.ReinvestParams memory params = IUniswapV3Spell
@@ -321,9 +347,7 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
     function getUniV3PositionInfo(
         address user
     ) public view returns (IWUniswapV3Position.PositionInfo memory) {
-        (, uint256 collId, uint256 collateralSize) = getHomoraPositionInfo(
-            user
-        );
+        (, uint256 collId, ) = getHomoraPositionInfo(user);
         return wrapper.getPositionInfoFromTokenId(collId);
     }
 

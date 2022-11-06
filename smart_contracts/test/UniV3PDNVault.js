@@ -106,7 +106,10 @@ describe("UniV3PDNVault", function () {
     await USDC.approve(vault.address, USDC_DECIMALS.mul(USDC_DECIMALS));
 
     // Open position.
-    await vault.connect(wallet).deposit(13000, USDC_DECIMALS.mul(10000));
+    let tx = await vault
+      .connect(wallet)
+      .deposit(13000, USDC_DECIMALS.mul(10000));
+    await expect(tx).to.emit(vault, "LogDeposit");
 
     const [oracle, collateralETHValue, borrowETHValue, debtRatio, debtAmounts] =
       await Promise.all([
@@ -142,5 +145,17 @@ describe("UniV3PDNVault", function () {
     console.log(`liquidity: ${liquidity}`);
     console.log(`tickLower: ${tickLower}`);
     console.log(`tickUpper: ${tickUpper}`);
+
+    // Reinvest
+    // tx = await vault.connect(wallet).reinvest();
+    // await expect(tx).to.emit(vault, "LogReinvest");
+
+    // Rebalance
+    tx = await vault.connect(wallet).rebalance(13000);
+    await expect(tx).to.emit(vault, "LogRebalance");
+
+    // Close position
+    tx = await vault.connect(wallet).withdraw();
+    await expect(tx).to.emit(vault, "LogWithdraw");
   });
 });
