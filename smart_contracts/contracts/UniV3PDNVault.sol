@@ -70,6 +70,7 @@ contract UniV3PDNVault {
         external
     {
         vaultConfig.leverageLevel = _leverageLevel;
+//        IOracle
     }
 
     function uniSqrtPriceX96(IUniswapV3Pool pool)
@@ -165,6 +166,7 @@ contract UniV3PDNVault {
                 address(this),
                 stableDepositAmount
             );
+            IERC20(pairInfo.stableToken).approve(contractInfo.bank, stableDepositAmount);
         }
 
         IUniswapV3Spell.OpenPositionParams memory params = deltaNeutralMath(
