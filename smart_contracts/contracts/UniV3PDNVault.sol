@@ -103,10 +103,10 @@ contract UniV3PDNVault {
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
         int24 tickUpper = UniswapV3TickMath.getTickAtSqrtRatio(
-            sqrtPriceX96 * uint160(Math.sqrt(priceRatioBps)) / SQRT_MAX_BPS
+            (sqrtPriceX96 * uint160(Math.sqrt(priceRatioBps))) / SQRT_MAX_BPS
         );
         int24 tickLower = UniswapV3TickMath.getTickAtSqrtRatio(
-            sqrtPriceX96 * SQRT_MAX_BPS / uint160(Math.sqrt(priceRatioBps))
+            (sqrtPriceX96 * SQRT_MAX_BPS) / uint160(Math.sqrt(priceRatioBps))
         );
         uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
@@ -150,7 +150,7 @@ contract UniV3PDNVault {
         params.deadline = block.timestamp;
     }
 
-    function deposit(uint256 stableDepositAmount) public {
+    function deposit(uint256 stableDepositAmount) external {
         if (stableDepositAmount > 0) {
             IERC20(pairInfo.stableToken).safeTransferFrom(
                 msg.sender,
@@ -165,11 +165,11 @@ contract UniV3PDNVault {
         position_id = position_id == pidAfter ? position_id : pidAfter;
     }
 
-    function withdraw(uint256 amount) public {
+    function withdraw(uint256 amount) external {
         // Call library to finish core withdraw function.
     }
 
-    function rebalance() public {}
+    function rebalance() external {}
 
-    function reinvest() public {}
+    function reinvest() external {}
 }
