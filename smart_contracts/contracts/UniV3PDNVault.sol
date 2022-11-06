@@ -97,8 +97,7 @@ contract UniV3PDNVault {
     function deltaNeutralMath(
         uint16 priceRatioBps,
         uint256 amtAUser,
-        uint256 amtBUser,
-        uint256 leverage
+        uint256 amtBUser
     ) internal view returns (IUniswapV3Spell.OpenPositionParams memory params) {
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
@@ -115,9 +114,11 @@ contract UniV3PDNVault {
             params.amt0User = amtAUser;
             params.amt1User = amtBUser;
             equity += mulSquareX96(amtBUser, sqrtPriceX96);
-            params.amt0Borrow = ((leverage - TWO_MAX_BPS) * equity) / leverage;
+            params.amt0Borrow =
+                ((vaultConfig.leverageLevel - TWO_MAX_BPS) * equity) /
+                vaultConfig.leverageLevel;
             params.amt1Borrow = divSquareX96(
-                (leverage * equity) / 2,
+                (vaultConfig.leverageLevel * equity) / 2,
                 sqrtPriceX96
             );
         } else {
@@ -127,10 +128,12 @@ contract UniV3PDNVault {
             params.amt1User = amtAUser;
             equity += divSquareX96(amtBUser, sqrtPriceX96);
             params.amt0Borrow = mulSquareX96(
-                (leverage * equity) / 2,
+                (vaultConfig.leverageLevel * equity) / 2,
                 sqrtPriceX96
             );
-            params.amt1Borrow = ((leverage - TWO_MAX_BPS) * equity) / leverage;
+            params.amt1Borrow =
+                ((vaultConfig.leverageLevel - TWO_MAX_BPS) * equity) /
+                vaultConfig.leverageLevel;
         }
 
         IUniswapV3OptimalSwap optimalSwap = IUniswapV3OptimalSwap(
@@ -150,7 +153,9 @@ contract UniV3PDNVault {
         params.deadline = block.timestamp;
     }
 
-    function deposit(uint256 stableDepositAmount) external {
+    function deposit(uint16 priceRatioBps, uint256 stableDepositAmount)
+        external
+    {
         if (stableDepositAmount > 0) {
             IERC20(pairInfo.stableToken).safeTransferFrom(
                 msg.sender,
@@ -159,10 +164,21 @@ contract UniV3PDNVault {
             );
         }
 
-        // Call library to finish core deposit function.
-        uint256 pidAfter = 20;
-        // Function should return actual pid from Homora.
-        position_id = position_id == pidAfter ? position_id : pidAfter;
+        IUniswapV3Spell.OpenPositionParams memory params = deltaNeutralMath(
+            priceRatioBps,
+            stableDepositAmount,
+            0
+        );
+        position_id = IBank(contractInfo.bank).execute(
+            position_id,
+            contractInfo.spell,
+            abi.encodeWithSelector(
+                IUniswapV3Spell.openPosition.selector,
+                params
+            )
+        );
+
+        emit LogDeposit();
     }
 
     function withdraw(uint256 amount) external {
@@ -172,4 +188,32 @@ contract UniV3PDNVault {
     function rebalance() external {}
 
     function reinvest() external {}
+
+    /// @notice Vault position on Homora
+    function getPositionInfo()
+        public
+        view
+        returns (
+            address collToken,
+            uint256 collId,
+            uint256 collateralSize
+        )
+    {
+        (collToken, collId, collateralSize) = IBank(contractInfo.bank)
+            .getPositionInfo(position_id);
+    }
+
+    function getCollateralETHValue() public view returns (uint256) {
+        return IBank(contractInfo.bank).getCollateralETHValue(position_id);
+    }
+
+    function getBorrowETHValue() public view returns (uint256) {
+        return IBank(contractInfo.bank).getBorrowETHValue(position_id);
+    }
+
+    /// @notice Calculate the debt ratio as seen by Homora Bank, multiplied by 1e4
+    function getDebtRatio() external view returns (uint16) {
+        return
+            uint16((getBorrowETHValue() * MAX_BPS) / getCollateralETHValue());
+    }
 }
