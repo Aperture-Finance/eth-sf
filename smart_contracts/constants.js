@@ -13,7 +13,10 @@ module.exports = {
     "function governor() view returns (address)",
     "function setAllowContractCalls(bool)",
     "function allowContractCalls() view returns (bool)",
-    "function setWhitelistUsers(address[], bool[])"
+    "function setWhitelistContractWithTxOrigin(address[],address[],bool[])",
+    "function setWhitelistUsers(address[],bool[])",
+    "function setCreditLimits(tuple(address,address,uint256,address)[])",
+    "function bankStatus() view returns (uint256)",
   ],
   OPTIMAL_SWAP_ABI: [
     "function getOptimalSwapAmt(address, uint256, uint256, int24, int24) view returns (uint256, uint256, bool)",
