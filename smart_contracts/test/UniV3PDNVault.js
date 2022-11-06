@@ -42,11 +42,13 @@ describe("UniV3PDNVault", function () {
     await vault.setConfig(30000, 0);
 
     await homoraBank.connect(governorSigner).setWhitelistUsers([vault.address], [true]);
-    console.log("Whitelisted vault.");
+    console.log("setWhitelistUsers finished.");
+    await homoraBank.connect(governorSigner).setWhitelistContractWithTxOrigin([vault.address], [wallet.address], [true]);
+    console.log("setWhitelistContractWithTxOrigin finished.");
 
     await homoraBank.connect(governorSigner).setCreditLimits([
-      [vault.address, USDC_ADDR, BigNumber.from(10).pow(6).mul(100000), ethers.constants.AddressZero],
-      [vault.address, WETH_ADDR, BigNumber.from(10).pow(18).mul(100000), ethers.constants.AddressZero]
+      [vault.address, USDC_ADDR, BigNumber.from(10).pow(6).mul(100000), wallet.address],
+      [vault.address, WETH_ADDR, BigNumber.from(10).pow(18).mul(100000), wallet.address]
     ]);
     console.log("Credit limits set.");
 
