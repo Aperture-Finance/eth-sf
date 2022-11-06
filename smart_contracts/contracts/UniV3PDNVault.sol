@@ -64,11 +64,10 @@ contract UniV3PDNVault {
         pairInfo.assetToken = assetToken;
     }
 
-    function setConfig(uint256 _leverageLevel, uint256 _debtRatioWidth)
+    function setConfig(uint16 _leverageLevel, uint256 _debtRatioWidth)
         external
     {
-        leverageLevel = _leverageLevel;
-        debtRatioWidth = _debtRatioWidth;
+        vaultConfig.leverageLevel = _leverageLevel;
     }
 
     function uniSqrtPriceX96(IUniswapV3Pool pool)
@@ -122,10 +121,10 @@ contract UniV3PDNVault {
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
         int24 tickUpper = UniswapV3TickMath.getTickAtSqrtRatio(
-            (sqrtPriceX96 * Math.sqrt(priceRatioBps)) / SQRT_MAX_BPS
+            uint160((sqrtPriceX96 * Math.sqrt(priceRatioBps)) / SQRT_MAX_BPS)
         );
         int24 tickLower = UniswapV3TickMath.getTickAtSqrtRatio(
-            (sqrtPriceX96 * SQRT_MAX_BPS) / Math.sqrt(priceRatioBps)
+            uint160((sqrtPriceX96 * SQRT_MAX_BPS) / Math.sqrt(priceRatioBps))
         );
         uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
