@@ -8,6 +8,7 @@ interface IHomoraPDN {
         address oracle; // Homora's Oracle address
         address router; // DEX's router address
         address spell; // Homora's Spell address
+        address optimalSwap;
     }
 
     // Addresses in the pair
