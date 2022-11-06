@@ -17,61 +17,38 @@ const BANK_ABI = JSON.parse(
     "data/abi/contracts/interfaces/homorav2/banks/IBankOP.sol/IBankOP.json"
   )
 );
+const homoraBank = new ethers.Contract(BANK_ADDR, BANK_ABI, ethers.provider);
 const ERC20_ABI = JSON.parse(
   fs.readFileSync(
     "data/abi/@openzeppelin/contracts/token/ERC20/IERC20.sol/IERC20.json"
   )
 );
+const USDC_DECIMALS = BigNumber.from(10).pow(6);
 
 describe("UniV3PDNVault", function () {
-  it("open position", async function () {
-    const wallet = await ethers.getImpersonatedSigner(
+  let wallet;
+  let vault;
+
+  beforeEach("Setup before each test", async function () {
+    wallet = await ethers.getImpersonatedSigner(
       "0xa3f45e619cE3AAe2Fa5f8244439a66B203b78bCc"
     );
-
-    const homoraBank = new ethers.Contract(
-      BANK_ADDR,
-      BANK_ABI,
-      ethers.provider
-    );
     const homoraBankGovernor = await homoraBank.governor();
-    console.log("governor: ", homoraBankGovernor);
+    console.log(`Governor: ${homoraBankGovernor}`);
     const governorSigner = await ethers.getImpersonatedSigner(
       homoraBankGovernor
     );
 
     await wallet.sendTransaction({
       to: homoraBankGovernor,
-      value: ethers.utils.parseEther("100"),
+      value: ethers.utils.parseEther("1"),
     });
 
-    const executor = await homoraBank.connect(governorSigner).exec();
-    console.log("exec address", executor);
-    await wallet.sendTransaction({
-      value: BigNumber.from(1).mul(BigNumber.from(10).pow(18)),
-      to: executor,
-      gasPrice: 50000000000,
-      gasLimit: 2000000,
-    });
-    const executorSigner = await ethers.getImpersonatedSigner(executor);
-    await homoraBank.connect(executorSigner).setAllowContractCalls(true);
-    console.log("set allow contract calls");
-    console.log(
-      "allowContractCallsResult: ",
-      await homoraBank.allowContractCalls()
+    const contractFactory = await ethers.getContractFactory(
+      "UniV3PDNVault",
+      wallet
     );
-    console.log("allowBorrowStatus: ", await homoraBank.allowBorrowStatus());
-    console.log(
-      "whitelistedTokens: USDC",
-      await homoraBank.whitelistedTokens(USDC_ADDR)
-    );
-    console.log(
-      "whitelistedTokens: WETH",
-      await homoraBank.whitelistedTokens(WETH_ADDR)
-    );
-
-    const Vault = await ethers.getContractFactory("UniV3PDNVault");
-    const vault = await Vault.deploy(
+    vault = await contractFactory.deploy(
       SPELL_ADDR,
       USDC_ADDR,
       WETH_ADDR,
@@ -80,8 +57,14 @@ describe("UniV3PDNVault", function () {
     );
     await vault.deployed();
     console.log(`Vault deployed to address ${vault.address}.`);
-    await vault.setConfig(30000, 0);
+    vault = vault.connect(wallet);
+    await vault.setConfig(30000, 100);
 
+    const bankStatus = await homoraBank.bankStatus();
+    console.log(`Bank status: ${bankStatus}`);
+    expect(await homoraBank.allowBorrowStatus()).to.be.true;
+    expect(await homoraBank.whitelistedTokens(WETH_ADDR)).to.be.true;
+    expect(await homoraBank.whitelistedTokens(USDC_ADDR)).to.be.true;
     await homoraBank
       .connect(governorSigner)
       .setWhitelistUsers([vault.address], [true]);
@@ -102,8 +85,8 @@ describe("UniV3PDNVault", function () {
       )
     ).to.be.true;
 
-    const CL1 = BigNumber.from(10).pow(6).mul(100000);
-    const CL2 = BigNumber.from(10).pow(18).mul(100000);
+    const CL1 = USDC_DECIMALS.mul(100000);
+    const CL2 = ethers.utils.parseEther("100000");
     await homoraBank.connect(governorSigner).setCreditLimits([
       [vault.address, USDC_ADDR, CL1, wallet.address],
       [vault.address, WETH_ADDR, CL2, wallet.address],
@@ -115,17 +98,47 @@ describe("UniV3PDNVault", function () {
     expect(
       await homoraBank.whitelistedUserCreditLimits(vault.address, WETH_ADDR)
     ).to.be.eq(CL2);
+  });
 
-    const bankStatus = await homoraBank.bankStatus();
-    console.log("Bank status: ", bankStatus);
-
+  it("open position", async function () {
     // Approve token.
     const USDC = new ethers.Contract(USDC_ADDR, ERC20_ABI, wallet);
-    await USDC.approve(vault.address, BigNumber.from(10).pow(12));
+    await USDC.approve(vault.address, USDC_DECIMALS.mul(USDC_DECIMALS));
 
     // Open position.
-    await vault
-      .connect(wallet)
-      .deposit(13000, BigNumber.from(10).pow(6).mul(100));
+    await vault.connect(wallet).deposit(13000, USDC_DECIMALS.mul(10000));
+
+    const [oracle, collateralETHValue, borrowETHValue, debtRatio] =
+      await Promise.all([
+        vault.oracle(),
+        vault.getCollateralETHValue(wallet.address),
+        vault.getBorrowETHValue(wallet.address),
+        vault.getDebtRatio(wallet.address),
+      ]);
+    console.log(`oracle: ${oracle}`);
+    console.log(`collateralETHValue: ${collateralETHValue}`);
+    console.log(`borrowETHValue: ${borrowETHValue}`);
+    console.log(`debtRatio: ${debtRatio}`);
+
+    const [
+      uniV3PositionManagerId,
+      pool,
+      bene,
+      token0,
+      token1,
+      fee,
+      liquidity,
+      tickLower,
+      tickUpper,
+    ] = await vault.getUniV3PositionInfo(wallet.address);
+    console.log(`uniV3PositionManagerId: ${uniV3PositionManagerId}`);
+    console.log(`pool: ${pool}`);
+    console.log(`bene: ${bene}`);
+    console.log(`token0: ${token0}`);
+    console.log(`token1: ${token1}`);
+    console.log(`fee: ${fee}`);
+    console.log(`liquidity: ${liquidity}`);
+    console.log(`tickLower: ${tickLower}`);
+    console.log(`tickUpper: ${tickUpper}`);
   });
 });

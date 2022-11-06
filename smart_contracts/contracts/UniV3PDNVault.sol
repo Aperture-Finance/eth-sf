@@ -5,6 +5,8 @@ import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./interfaces/homorav2/IOracle.sol";
 import "./interfaces/homorav2/banks/IBank.sol";
@@ -15,16 +17,15 @@ import "./interfaces/uniswapv3/IUniswapV3Pool.sol";
 
 import "./libraries/UniswapV3TickMath.sol";
 
-contract UniV3PDNVault {
+contract UniV3PDNVault is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
     struct VaultConfig {
-        uint16 leverageLevel; // target leverage * 10000
+        uint16 leverage; // target leverage * 10000
         uint16 targetDebtRatio; // target debt ratio * 10000, 92% -> 9200
         uint16 minDebtRatio; // minimum debt ratio * 10000
         uint16 maxDebtRatio; // maximum debt ratio * 10000
-        uint16 deltaThreshold; // delta deviation threshold in percentage * 10000
         uint16 collateralFactor; // LP collateral factor on Homora
         uint16 stableBorrowFactor; // stable token borrow factor on Homora
         uint16 assetBorrowFactor; // asset token borrow factor on Homora
@@ -68,6 +69,8 @@ contract UniV3PDNVault {
     event LogRebalance();
     event LogReinvest(address user, uint256 position_id);
 
+    error Invalid_Debt_Ratio();
+
     constructor(
         address _spell,
         address _stableToken,
@@ -93,10 +96,46 @@ contract UniV3PDNVault {
     }
 
     function setConfig(
-        uint16 _leverageLevel,
-        uint256 _debtRatioWidth
-    ) external {
-        vaultConfig.leverageLevel = _leverageLevel;
+        uint16 _leverage,
+        uint16 _debtRatioWidth
+    ) external onlyOwner {
+        IBaseOracle source = oracle.source();
+        (, uint16 collateralFactor, ) = oracle.tokenFactors(address(pool));
+        (uint16 stableBorrowFactor, , ) = oracle.tokenFactors(stableToken);
+        (uint16 assetBorrowFactor, , ) = oracle.tokenFactors(assetToken);
+        uint16 targetDebtRatio = uint16(
+            (MAX_BPS *
+                (Math.mulDiv(
+                    stableBorrowFactor,
+                    _leverage - TWO_MAX_BPS,
+                    _leverage
+                ) + assetBorrowFactor)) / (2 * collateralFactor)
+        );
+        uint16 minDebtRatio = targetDebtRatio - _debtRatioWidth;
+        uint16 maxDebtRatio = targetDebtRatio + _debtRatioWidth;
+        console.log("collateralFactor", collateralFactor);
+        console.log("stableBorrowFactor", stableBorrowFactor);
+        console.log("assetBorrowFactor", assetBorrowFactor);
+        console.log("targetDebtRatio", targetDebtRatio);
+        //        console.log("stableETHPx", source.getETHPx(stableToken));
+        //        console.log("assetETHPx", source.getETHPx(assetToken));
+        //        console.log("lpETHPx", source.getETHPx(address(pool)));
+        if (
+            !(0 < minDebtRatio &&
+                minDebtRatio < maxDebtRatio &&
+                maxDebtRatio < MAX_BPS)
+        ) {
+            revert Invalid_Debt_Ratio();
+        }
+        vaultConfig = VaultConfig(
+            _leverage,
+            targetDebtRatio,
+            minDebtRatio,
+            maxDebtRatio,
+            collateralFactor,
+            stableBorrowFactor,
+            assetBorrowFactor
+        );
     }
 
     function sqrtToken0PriceX96() internal view returns (uint160 sqrtPriceX96) {
@@ -144,7 +183,7 @@ contract UniV3PDNVault {
             )
         );
 
-        uint16 leverageLevel = vaultConfig.leverageLevel;
+        uint16 leverage = vaultConfig.leverage;
         uint256 equity;
         if (stableToken == pool.token0()) {
             // sqrtPriceX96 == sqrt(token1/token0) * 2**96
@@ -156,10 +195,10 @@ contract UniV3PDNVault {
                 params.amt0User +
                 divSquareX96(params.amt1User, sqrtPriceX96);
             params.amt0Borrow =
-                ((leverageLevel - TWO_MAX_BPS) * equity) /
+                ((leverage - TWO_MAX_BPS) * equity) /
                 TWO_MAX_BPS;
             params.amt1Borrow = mulSquareX96(
-                (leverageLevel * equity) / TWO_MAX_BPS,
+                (leverage * equity) / TWO_MAX_BPS,
                 sqrtPriceX96
             );
         } else {
@@ -171,9 +210,9 @@ contract UniV3PDNVault {
             equity =
                 params.amt0User +
                 divSquareX96(params.amt1User, sqrtPriceX96);
-            params.amt0Borrow = (leverageLevel * equity) / TWO_MAX_BPS;
+            params.amt0Borrow = (leverage * equity) / TWO_MAX_BPS;
             params.amt1Borrow = mulSquareX96(
-                ((leverageLevel - TWO_MAX_BPS) * equity) / TWO_MAX_BPS,
+                ((leverage - TWO_MAX_BPS) * equity) / TWO_MAX_BPS,
                 sqrtPriceX96
             );
         }
@@ -195,7 +234,7 @@ contract UniV3PDNVault {
     function deposit(
         uint16 priceRatioBps,
         uint256 stableDepositAmount
-    ) external {
+    ) external nonReentrant {
         if (stableDepositAmount > 0) {
             IERC20(stableToken).safeTransferFrom(
                 msg.sender,
@@ -228,7 +267,7 @@ contract UniV3PDNVault {
         emit LogDeposit(msg.sender, position_id, stableDepositAmount);
     }
 
-    function withdraw() external {
+    function withdraw() external nonReentrant {
         IUniswapV3Spell.ClosePositionParams memory params = IUniswapV3Spell
             .ClosePositionParams(0, 0, block.timestamp, true);
         uint256 position_id = positions[msg.sender];
@@ -252,9 +291,9 @@ contract UniV3PDNVault {
         emit LogWithdraw(msg.sender, position_id, stableBalance, assetBalance);
     }
 
-    function rebalance() external {}
+    function rebalance() external nonReentrant {}
 
-    function reinvest() external {
+    function reinvest() external nonReentrant {
         IUniswapV3Spell.ReinvestParams memory params = IUniswapV3Spell
             .ReinvestParams(0, 0, false, 0, 0, block.timestamp);
         uint256 position_id = positions[msg.sender];
@@ -281,7 +320,11 @@ contract UniV3PDNVault {
     function getUniV3PositionInfo(
         address user
     ) public view returns (IWUniswapV3Position.PositionInfo memory) {
-        (, uint256 collId, ) = getHomoraPositionInfo(user);
+        (, uint256 collId, uint256 collateralSize) = getHomoraPositionInfo(
+            user
+        );
+        console.log("collId", collId);
+        console.log("collateralSize", collateralSize);
         return wrapper.getPositionInfoFromTokenId(collId);
     }
 
@@ -294,7 +337,7 @@ contract UniV3PDNVault {
     }
 
     /// @notice Calculate the debt ratio as seen by Homora Bank, multiplied by 1e4
-    function getDebtRatio(address user) external view returns (uint16) {
+    function getDebtRatio(address user) public view returns (uint16) {
         return
             uint16(
                 (getBorrowETHValue(user) * MAX_BPS) /

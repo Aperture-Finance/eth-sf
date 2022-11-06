@@ -13,12 +13,12 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
-        // details: {
-        //   yul: true,
-        // },
+        runs: 2**32-1,
+        details: {
+          yul: true,
+        },
       },
-      // viaIR: true,
+      viaIR: true,
     },
   },
   networks: {

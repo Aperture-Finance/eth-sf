@@ -2,7 +2,30 @@
 
 pragma solidity 0.8.16;
 
+interface IBaseOracle {
+    /// @dev Return the value of the given input as ETH per unit, multiplied by 2**112.
+    /// @param token The ERC-20 token to check the value.
+    function getETHPx(address token) external view returns (uint256);
+}
+
 interface IOracle {
+    function source() external view returns (IBaseOracle);
+
+    function tokenFactors(
+        address token
+    )
+        external
+        view
+        returns (
+            uint16 borrowFactor,
+            uint16 collateralFactor,
+            uint16 liqIncentive
+        );
+
+    /// @dev Return whether the ERC-20 token is supported
+    /// @param token The ERC-20 token to check for support
+    function support(address token) external view returns (bool);
+
     /// @dev Return whether the oracle supports evaluating collateral value of the given address.
     /// @param token The ERC-1155 token to check the acceptence.
     /// @param id The token id to check the acceptance.
@@ -44,8 +67,4 @@ interface IOracle {
         uint256 amount,
         address owner
     ) external view returns (uint256);
-
-    /// @dev Return whether the ERC-20 token is supported
-    /// @param token The ERC-20 token to check for support
-    function support(address token) external view returns (bool);
 }

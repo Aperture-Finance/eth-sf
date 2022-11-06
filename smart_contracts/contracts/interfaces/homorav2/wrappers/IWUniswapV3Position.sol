@@ -40,7 +40,7 @@ interface IWUniswapV3Position is IERC1155, IGovernable {
     ) external view returns (address pool);
 
     /// @dev Return the conversion rate from ERC1155 to the UniV3position, multiplied by 2**112.
-    function getUnderlyingRate(uint256) external returns (uint256);
+    function getUnderlyingRate(uint256) external view returns (uint256);
 
     /// @dev get uniswap v3 position info from token id
     function getPositionInfoFromTokenId(
