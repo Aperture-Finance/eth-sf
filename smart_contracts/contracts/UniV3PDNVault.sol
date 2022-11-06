@@ -9,6 +9,8 @@ import "./interfaces/homorav2/banks/IBank.sol";
 import "./interfaces/homorav2/spells/IUniswapV3Spell.sol";
 import "./interfaces/uniswapv3/IUniswapV3Pool.sol";
 
+import "./libraries/UniswapV3TickMath.sol";
+
 contract UniV3PDNVault {
     using SafeERC20 for IERC20;
     using Math for uint256;
@@ -29,7 +31,7 @@ contract UniV3PDNVault {
     uint256 public totalShare;
     mapping(uint16 => mapping(uint128 => IHomoraPDN.Position)) public positions;
     // Homora position id.
-    uint256 public pid;
+    uint256 public position_id;
 
     event LogDeposit();
     event LogWithdraw();
@@ -37,26 +39,21 @@ contract UniV3PDNVault {
     event LogReinvest();
 
     constructor(
-        address stableToken,
-        address assetToken,
-        address bank,
         address spell,
         address stableToken,
-        address assetToken
+        address assetToken,
+        address lpToken
     ) payable {
         pairInfo.stableToken = stableToken;
         pairInfo.assetToken = assetToken;
-        require(bank != address(0));
-        contractInfo.bank = bank;
-        contractInfo.oracle = IBank(bank).oracle();
         require(spell != address(0));
         contractInfo.spell = spell;
+        address bank = IUniswapV3Spell(spell).bank();
+        contractInfo.bank = bank;
+        contractInfo.oracle = IBank(bank).oracle();
         contractInfo.router = IUniswapV3Spell(spell).router();
-        //        pairInfo.lpToken = IUniswapV3Spell(spell).pairs(
-        //            stableToken,
-        //            assetToken
-        //        );
-        //        require(IBank(bank).support(pairInfo.lpToken));
+        pairInfo.lpToken = lpToken;
+//        require(IBank(bank).support(pairInfo.lpToken));
         require(IBank(bank).support(stableToken));
         pairInfo.stableToken = stableToken;
         require(IBank(bank).support(assetToken));
@@ -138,7 +135,7 @@ contract UniV3PDNVault {
         // Call library to finish core deposit function.
         uint256 pidAfter = 20;
         // Function should return actual pid from Homora.
-        pid = pid == pidAfter ? pid : pidAfter;
+        position_id = position_id == pidAfter ? position_id : pidAfter;
     }
 
     function withdraw(uint256 amount) public {

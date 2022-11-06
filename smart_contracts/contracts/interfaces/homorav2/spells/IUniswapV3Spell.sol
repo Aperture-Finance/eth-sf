@@ -83,10 +83,11 @@ interface IUniswapV3Spell {
     /// @param _params reinvest parameters.
     function reinvest(ReinvestParams calldata _params) external;
 
-    function pairs(address tokenA, address tokenB)
-        external
-        view
-        returns (address);
+    function bank() external view returns (address);
+
+    function factory() external view returns (address);
 
     function router() external view returns (address);
+
+    function wrapper() external view returns (address);
 }
