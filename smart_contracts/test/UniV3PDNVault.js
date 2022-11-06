@@ -150,12 +150,12 @@ describe("UniV3PDNVault", function () {
     // tx = await vault.connect(wallet).reinvest();
     // await expect(tx).to.emit(vault, "LogReinvest");
 
-    // Rebalance
-    tx = await vault.connect(wallet).rebalance(13000);
-    await expect(tx).to.emit(vault, "LogRebalance");
+    // // Rebalance
+    // tx = await vault.connect(wallet).rebalance(13000);
+    // await expect(tx).to.emit(vault, "LogRebalance");
 
-    // Close position
-    tx = await vault.connect(wallet).withdraw();
-    await expect(tx).to.emit(vault, "LogWithdraw");
+    // // Close position
+    // tx = await vault.connect(wallet).withdraw();
+    // await expect(tx).to.emit(vault, "LogWithdraw");
   });
 });
