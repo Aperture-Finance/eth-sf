@@ -32,12 +32,20 @@ contract UniV3PDNVault {
 
     // --- state ---
     uint256 public totalShare;
+    // Mapping from user address to Homora position id.
     mapping(address => uint256) public positions;
-    // Homora position id.
-    uint256 public position_id;
 
-    event LogDeposit();
-    event LogWithdraw();
+    event LogDeposit(
+        address user,
+        uint256 position_id,
+        uint256 stableDepositAmount
+    );
+    event LogWithdraw(
+        address user,
+        uint256 position_id,
+        uint256 stableWithdrawAmount,
+        uint256 assetWithdrawAmount
+    );
     event LogRebalance();
     event LogReinvest();
 
@@ -70,7 +78,7 @@ contract UniV3PDNVault {
         external
     {
         vaultConfig.leverageLevel = _leverageLevel;
-//        IOracle
+        //        IOracle
     }
 
     function uniSqrtPriceX96(IUniswapV3Pool pool)
@@ -166,7 +174,10 @@ contract UniV3PDNVault {
                 address(this),
                 stableDepositAmount
             );
-            IERC20(pairInfo.stableToken).approve(contractInfo.bank, stableDepositAmount);
+            IERC20(pairInfo.stableToken).approve(
+                contractInfo.bank,
+                stableDepositAmount
+            );
         }
 
         IUniswapV3Spell.OpenPositionParams memory params = deltaNeutralMath(
@@ -174,7 +185,7 @@ contract UniV3PDNVault {
             stableDepositAmount,
             0
         );
-        positions[msg.sender] = IBank(contractInfo.bank).execute(
+        uint256 position_id = IBank(contractInfo.bank).execute(
             positions[msg.sender],
             contractInfo.spell,
             abi.encodeWithSelector(
@@ -182,19 +193,40 @@ contract UniV3PDNVault {
                 params
             )
         );
+        positions[msg.sender] = position_id;
 
-        emit LogDeposit();
+        emit LogDeposit(msg.sender, position_id, stableDepositAmount);
     }
 
-    struct ClosePositionParams {
-        uint256 amt0Min; // minimum amount of token0 gain after remove liquidity and repay debt.
-        uint256 amt1Min; // minimum amount of token1 gain after remove liquidity and repay debt.
-        uint256 deadline; // deadline for decreaseLiquidity.
-        bool convertWETH; // convert weth to eth or not (true -> convert to eth)
-    }
+    function withdraw() external {
+        IUniswapV3Spell.ClosePositionParams memory params = IUniswapV3Spell
+            .ClosePositionParams(0, 0, block.timestamp, true);
+        uint256 position_id = positions[msg.sender];
+        IBank(contractInfo.bank).execute(
+            position_id,
+            contractInfo.spell,
+            abi.encodeWithSelector(
+                IUniswapV3Spell.closePosition.selector,
+                params
+            )
+        );
+        uint256 stableBalance = IERC20(pairInfo.stableToken).balanceOf(
+            address(this)
+        );
+        if (stableBalance > 0) {
+            IERC20(pairInfo.stableToken).safeTransfer(
+                msg.sender,
+                stableBalance
+            );
+        }
+        uint256 assetBalance = IERC20(pairInfo.assetToken).balanceOf(
+            address(this)
+        );
+        if (assetBalance > 0) {
+            IERC20(pairInfo.assetToken).safeTransfer(msg.sender, assetBalance);
+        }
 
-    function withdraw(uint256 amount) external {
-        // Call library to finish core withdraw function.
+        emit LogWithdraw(msg.sender, position_id, stableBalance, assetBalance);
     }
 
     function rebalance() external {}
@@ -220,7 +252,9 @@ contract UniV3PDNVault {
         returns (IWUniswapV3Position.PositionInfo memory)
     {
         (, uint256 collId, ) = getHomoraPositionInfo(user);
-        return IWUniswapV3Position(contractInfo.wrapper).getPositionInfoFromTokenId(collId);
+        return
+            IWUniswapV3Position(contractInfo.wrapper)
+                .getPositionInfoFromTokenId(collId);
     }
 
     function getCollateralETHValue(address user) public view returns (uint256) {

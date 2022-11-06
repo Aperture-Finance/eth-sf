@@ -1,9 +1,9 @@
 [
   "constructor(address,address,address,address,address) payable",
-  "event LogDeposit()",
+  "event LogDeposit(address,uint256,uint256)",
   "event LogRebalance()",
   "event LogReinvest()",
-  "event LogWithdraw()",
+  "event LogWithdraw(address,uint256,uint256,uint256)",
   "function MAX_BPS() view returns (uint16)",
   "function SQRT_MAX_BPS() view returns (uint16)",
   "function TWO_MAX_BPS() view returns (uint16)",
@@ -16,12 +16,11 @@
   "function getHomoraPositionInfo(address) view returns (address, uint256, uint256)",
   "function getUniV3PositionInfo(address) view returns (tuple(uint256,address,address,address,address,uint24,uint128,int24,int24))",
   "function pairInfo() view returns (address, address, address)",
-  "function position_id() view returns (uint256)",
   "function positions(address) view returns (uint256)",
   "function rebalance()",
   "function reinvest()",
   "function setConfig(uint16,uint256)",
   "function totalShare() view returns (uint256)",
   "function vaultConfig() view returns (uint16, uint16, uint16, uint16, uint16, uint16, uint16, uint16)",
-  "function withdraw(uint256)"
+  "function withdraw()"
 ]
