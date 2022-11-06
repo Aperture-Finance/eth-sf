@@ -15,6 +15,8 @@ contract UniV3PDNVault {
 
     // --- constants ---
     uint256 public constant X96 = 2**96;
+    uint256 public constant MAX_BPS = 10000;
+    uint256 public constant TWO_MAX_BPS = 20000;
 
     // --- config ---
     IHomoraPDN.PairInfo public pairInfo;
@@ -50,11 +52,11 @@ contract UniV3PDNVault {
         require(spell != address(0));
         contractInfo.spell = spell;
         contractInfo.router = IUniswapV3Spell(spell).router();
-//        pairInfo.lpToken = IUniswapV3Spell(spell).pairs(
-//            stableToken,
-//            assetToken
-//        );
-//        require(IBank(bank).support(pairInfo.lpToken));
+        //        pairInfo.lpToken = IUniswapV3Spell(spell).pairs(
+        //            stableToken,
+        //            assetToken
+        //        );
+        //        require(IBank(bank).support(pairInfo.lpToken));
         require(IBank(bank).support(stableToken));
         pairInfo.stableToken = stableToken;
         require(IBank(bank).support(assetToken));
@@ -97,17 +99,31 @@ contract UniV3PDNVault {
         uint256 amtAUser,
         uint256 amtBUser,
         uint256 leverage
-    ) internal view returns (uint256) {
+    ) internal view returns (IUniswapV3Spell.OpenPositionParams memory params) {
+        params.token0 = pairInfo.stableToken;
+        params.token1 = pairInfo.assetToken;
+        params.amt0User = amtAUser;
+        params.amt1User = amtBUser;
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
-        uint160 sqrtPriceBx96 = uniSqrtPriceX96(pool);
+        uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
         uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
-             equity += mulSquareX96(amtBUser, sqrtPriceBx96);
+            equity += mulSquareX96(amtBUser, sqrtPriceX96);
         } else {
-            equity += divSquareX96(amtBUser, sqrtPriceBx96);
+            equity += divSquareX96(amtBUser, sqrtPriceX96);
         }
-        uint256 amtABorrow;
-        uint256 amtBBorrow;
+        uint256 amtABorrow = (leverage - TWO_MAX_BPS) * equity / leverage;
+        if (pairInfo.stableToken == pool.token0()) {
+            uint256 amtBBorrow = divSquareX96(leverage * equity / 2, sqrtPriceX96);
+        } else {
+            uint256 amtBBorrow = mulSquareX96(leverage * equity / 2, sqrtPriceX96);
+        }
+        params.amt0Borrow = amtABorrow;
+        params.amt1Borrow = amtBBorrow;
+        params.amtInOptimalSwap;
+        params.amtOutMinOptimalSwap;
+        params.isZeroForOneSwap;
+        params.deadline = block.timestamp;
     }
 
     function deposit(uint256 stableDepositAmount) public {
@@ -125,7 +141,7 @@ contract UniV3PDNVault {
         pid = pid == pidAfter ? pid : pidAfter;
     }
 
-    function withfraw(uint256 amount) public {
+    function withdraw(uint256 amount) public {
         // Call library to finish core withdraw function.
     }
 
