@@ -11,6 +11,7 @@ const OutlineButton = styled.div`
   cursor: pointer;
   border-radius: 8px;
   transition: 1s;
+  margin: 10px;
   &:hover {
     color: #4d64fb;
     border-color: #4d64fb;
@@ -19,6 +20,14 @@ const OutlineButton = styled.div`
   }
 `;
 
-export const Button = ({ children, ...props }) => {
-  return <OutlineButton {...props}>{children}</OutlineButton>;
+function test(action) {
+  console.log("test clicked: ", action);
+}
+
+export const Button = ({ children, props }) => {
+  return <OutlineButton onClick={
+    () => {
+      test(children);
+    }
+  } {...props}>{children}</OutlineButton>;
 };
