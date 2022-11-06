@@ -108,17 +108,19 @@ describe("UniV3PDNVault", function () {
     // Open position.
     await vault.connect(wallet).deposit(13000, USDC_DECIMALS.mul(10000));
 
-    const [oracle, collateralETHValue, borrowETHValue, debtRatio] =
+    const [oracle, collateralETHValue, borrowETHValue, debtRatio, debtAmounts] =
       await Promise.all([
         vault.oracle(),
         vault.getCollateralETHValue(wallet.address),
         vault.getBorrowETHValue(wallet.address),
         vault.getDebtRatio(wallet.address),
+        vault.getDebtAmounts(wallet.address),
       ]);
     console.log(`oracle: ${oracle}`);
     console.log(`collateralETHValue: ${collateralETHValue}`);
     console.log(`borrowETHValue: ${borrowETHValue}`);
     console.log(`debtRatio: ${debtRatio}`);
+    console.log(`debtAmounts: ${debtAmounts}`);
 
     const [
       uniV3PositionManagerId,

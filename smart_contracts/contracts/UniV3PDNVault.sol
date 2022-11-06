@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.16 <0.9.0;
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -21,16 +21,6 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
-    struct VaultConfig {
-        uint16 leverage; // target leverage * 10000
-        uint16 targetDebtRatio; // target debt ratio * 10000, 92% -> 9200
-        uint16 minDebtRatio; // minimum debt ratio * 10000
-        uint16 maxDebtRatio; // maximum debt ratio * 10000
-        uint16 collateralFactor; // LP collateral factor on Homora
-        uint16 stableBorrowFactor; // stable token borrow factor on Homora
-        uint16 assetBorrowFactor; // asset token borrow factor on Homora
-    }
-
     // --- constants ---
     uint256 public constant X96 = 2 ** 96;
     uint16 public constant MAX_BPS = 10000;
@@ -47,6 +37,19 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
     address stableToken; // token 0
     address assetToken; // token 1
     IUniswapV3Pool public pool; // ERC-721 LP token address
+
+    struct VaultConfig {
+        uint16 leverage; // target leverage * 10000
+        uint16 targetDebtRatio; // target debt ratio * 10000, 92% -> 9200
+        uint16 minDebtRatio; // minimum debt ratio * 10000
+        uint16 maxDebtRatio; // maximum debt ratio * 10000
+        uint16 collateralFactor; // LP collateral factor on Homora
+        uint16 stableBorrowFactor; // stable token borrow factor on Homora
+        uint16 assetBorrowFactor; // asset token borrow factor on Homora
+        uint24 fee; // Uni V3 fee tier
+        int24 tickSpacing; // Uni v3 pool tick spacing
+        bool reversed; // pool.token0 != stableToken
+    }
 
     VaultConfig public vaultConfig;
 
@@ -88,7 +91,15 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         IBank iBank = IBank(iSpell.bank());
         bank = iBank;
         oracle = IOracle(iBank.oracle());
-        pool = IUniswapV3Pool(_pool);
+        IUniswapV3Pool iPool = IUniswapV3Pool(_pool);
+        pool = iPool;
+        if (_stableToken == iPool.token0()) {
+            require(_assetToken == iPool.token1(), "Wrong pool");
+        } else if (_stableToken == iPool.token1()) {
+            require(_assetToken == iPool.token0(), "Wrong pool");
+        } else {
+            revert("Wrong pool");
+        }
         require(iBank.support(_stableToken));
         stableToken = _stableToken;
         require(iBank.support(_assetToken));
@@ -113,13 +124,6 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         );
         uint16 minDebtRatio = targetDebtRatio - _debtRatioWidth;
         uint16 maxDebtRatio = targetDebtRatio + _debtRatioWidth;
-        console.log("collateralFactor", collateralFactor);
-        console.log("stableBorrowFactor", stableBorrowFactor);
-        console.log("assetBorrowFactor", assetBorrowFactor);
-        console.log("targetDebtRatio", targetDebtRatio);
-        //        console.log("stableETHPx", source.getETHPx(stableToken));
-        //        console.log("assetETHPx", source.getETHPx(assetToken));
-        //        console.log("lpETHPx", source.getETHPx(address(pool)));
         if (
             !(0 < minDebtRatio &&
                 minDebtRatio < maxDebtRatio &&
@@ -134,7 +138,10 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
             maxDebtRatio,
             collateralFactor,
             stableBorrowFactor,
-            assetBorrowFactor
+            assetBorrowFactor,
+            pool.fee(),
+            pool.tickSpacing(),
+            stableToken != pool.token0()
         );
     }
 
@@ -143,9 +150,8 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
     }
 
     function matchTickSpacing(int24 tick) internal view returns (int24) {
-        uint tickSpacing = uint(int(pool.tickSpacing()));
         uint absTick = tick < 0 ? uint(-int(tick)) : uint(int(tick));
-        absTick -= absTick % tickSpacing;
+        absTick -= absTick % uint(int(vaultConfig.tickSpacing));
         return tick < 0 ? -int24(int(absTick)) : int24(int(absTick));
     }
 
@@ -168,7 +174,7 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         uint256 amtAUser,
         uint256 amtBUser
     ) internal view returns (IUniswapV3Spell.OpenPositionParams memory params) {
-        params.fee = 500;
+        params.fee = vaultConfig.fee;
         uint160 sqrtPriceX96 = sqrtToken0PriceX96();
         params.tickUpper = matchTickSpacing(
             UniswapV3TickMath.getTickAtSqrtRatio(
@@ -185,8 +191,8 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
 
         uint16 leverage = vaultConfig.leverage;
         uint256 equity;
-        if (stableToken == pool.token0()) {
-            // sqrtPriceX96 == sqrt(token1/token0) * 2**96
+        // sqrtPriceX96 == sqrt(token1/token0) * 2**96
+        if (!vaultConfig.reversed) {
             params.token0 = stableToken;
             params.token1 = assetToken;
             params.amt0User = amtAUser;
@@ -202,7 +208,6 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
                 sqrtPriceX96
             );
         } else {
-            require(stableToken == pool.token1(), "Wrong pool");
             params.token0 = assetToken;
             params.token1 = stableToken;
             params.amt0User = amtBUser;
@@ -249,10 +254,6 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
             stableDepositAmount,
             0
         );
-        console.log("amt0User", params.amt0User);
-        console.log("amt1User", params.amt1User);
-        console.log("amt0Borrow", params.amt0Borrow);
-        console.log("amt1Borrow", params.amt1Borrow);
 
         uint256 position_id = bank.execute(
             positions[msg.sender],
@@ -323,8 +324,6 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
         (, uint256 collId, uint256 collateralSize) = getHomoraPositionInfo(
             user
         );
-        console.log("collId", collId);
-        console.log("collateralSize", collateralSize);
         return wrapper.getPositionInfoFromTokenId(collId);
     }
 
@@ -343,6 +342,20 @@ contract UniV3PDNVault is Ownable, ReentrancyGuard {
                 (getBorrowETHValue(user) * MAX_BPS) /
                     getCollateralETHValue(user)
             );
+    }
+
+    function getDebtAmounts(
+        address user
+    ) public view returns (uint256, uint256) {
+        uint256 position_id = positions[user];
+        if (position_id > 0) {
+            return (
+                bank.borrowBalanceStored(position_id, stableToken),
+                bank.borrowBalanceStored(position_id, assetToken)
+            );
+        } else {
+            return (0, 0);
+        }
     }
 
     receive() external payable {}
