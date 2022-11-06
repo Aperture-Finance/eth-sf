@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Withdraw } from "./Withdraw";
 import { Info } from "./Info";
 import { ConnectWallet } from "./ConnectWallet";
+import uni from "../image/uni.png";
 
 const Body = styled.div`
   positoin: relative;
@@ -23,7 +24,9 @@ function App() {
         <Info />
         <ConnectWallet />
       </LeftContainer>
-      <Withdraw />
+      <LeftContainer>
+        <Withdraw />
+      </LeftContainer>
     </Body>
   );
 }

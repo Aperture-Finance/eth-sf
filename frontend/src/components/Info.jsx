@@ -17,9 +17,9 @@ const Text = styled.div`
   margin-top: 25px;
   line-height: 1.6;
 `;
-// const Red = styled.span`
-//   color: #F35979;
-// `
+const Red = styled.span`
+  color: #F35979;
+`
 const Yellow = styled.span`
   color: #fbcc1a;
 `;
@@ -29,11 +29,13 @@ const Blue = styled.span`
 const Green = styled.span`
   color: #e79d97;
 `;
+
+// #eb4034
 export const Info = () => {
   return (
     <div>
       <Title>
-        <Yellow>Crab</Yellow> Market Leveraged <Green>Farming</Green>
+        <Yellow>UniSwap V3 Crab</Yellow> Leveraged Farming on <Red> OP</Red>
       </Title>
       <SubTitle>
         AKA <Blue>Pseudo Delta Neutral</Blue> Strategies
