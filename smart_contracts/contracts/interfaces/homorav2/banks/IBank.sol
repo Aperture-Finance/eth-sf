@@ -62,16 +62,16 @@ interface IBank is IGovernable {
 
     /// @dev Return credit limit from user address and token.
     /// NOTE: Credit limits are only applied specifically for whitelisted users.
-    function whitelistedUserCreditLimits(address user, address token)
-        external
-        view
-        returns (uint256);
+    function whitelistedUserCreditLimits(
+        address user,
+        address token
+    ) external view returns (uint256);
 
     /// @dev Return borrow share from user address and token.
-    function whitelistedUserBorrowShares(address user, address token)
-        external
-        view
-        returns (uint256);
+    function whitelistedUserBorrowShares(
+        address user,
+        address token
+    ) external view returns (uint256);
 
     /// @dev Return whether the user was ever whitelisted
     function everWhitelistedUsers(address user) external view returns (address);
@@ -145,21 +145,24 @@ interface IBank is IGovernable {
     /// @dev Return the borrow balance for given position and token without triggering interest accrual.
     /// @param positionId The position to query for borrow balance.
     /// @param token The token to query for borrow balance.
-    function borrowBalanceStored(uint256 positionId, address token)
-        external
-        view
-        returns (uint256);
+    function borrowBalanceStored(
+        uint256 positionId,
+        address token
+    ) external view returns (uint256);
 
     /// @dev Trigger interest accrual and return the current borrow balance.
     /// @param positionId The position to query for borrow balance.
     /// @param token The token to query for borrow balance.
-    function borrowBalanceCurrent(uint256 positionId, address token)
-        external
-        returns (uint256);
+    function borrowBalanceCurrent(
+        uint256 positionId,
+        address token
+    ) external returns (uint256);
 
     /// @dev Return bank information for the given token.
     /// @param token The token address to query for bank information.
-    function getBankInfo(address token)
+    function getBankInfo(
+        address token
+    )
         external
         view
         returns (
@@ -172,7 +175,9 @@ interface IBank is IGovernable {
 
     /// @dev Return position information for the given position id.
     /// @param positionId The position id to query for position information.
-    function getPositionInfo(uint256 positionId)
+    function getPositionInfo(
+        uint256 positionId
+    )
         external
         view
         returns (
@@ -196,31 +201,28 @@ interface IBank is IGovernable {
     /// @dev Return the debt share of the given bank token for the given position id.
     /// @param positionId position id to get debt of
     /// @param token ERC20 debt token to query
-    function getPositionDebtShareOf(uint256 positionId, address token)
-        external
-        view
-        returns (uint256);
+    function getPositionDebtShareOf(
+        uint256 positionId,
+        address token
+    ) external view returns (uint256);
 
     /// @dev Return the list of all debts for the given position id.
     /// @param positionId position id to get debts of
-    function getPositionDebts(uint256 positionId)
-        external
-        view
-        returns (address[] memory tokens, uint256[] memory debts);
+    function getPositionDebts(
+        uint256 positionId
+    ) external view returns (address[] memory tokens, uint256[] memory debts);
 
     /// @dev Return the total collateral value of the given position in ETH.
     /// @param positionId The position ID to query for the collateral value.
-    function getCollateralETHValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
+    function getCollateralETHValue(
+        uint256 positionId
+    ) external view returns (uint256);
 
     /// @dev Return the total borrow value of the given position in ETH.
     /// @param positionId The position ID to query for the borrow value.
-    function getBorrowETHValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
+    function getBorrowETHValue(
+        uint256 positionId
+    ) external view returns (uint256);
 
     /// @dev Add a new bank to the ecosystem.
     /// @param token The underlying token for the bank.

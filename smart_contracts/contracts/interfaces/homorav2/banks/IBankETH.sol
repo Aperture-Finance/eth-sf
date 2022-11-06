@@ -13,9 +13,10 @@ interface IBankETH is IBank {
     }
 
     /// @dev Return whether `msgSender` can call HomoraBank by `origin` address
-    function whitelistedContractWithTxOrigin(address msgSender, address origin)
-        external
-        returns (bool);
+    function whitelistedContractWithTxOrigin(
+        address msgSender,
+        address origin
+    ) external returns (bool);
 
     /// @dev Set whether `contract` can call HomoraBank by `origin` address
     /// @param _contracts list of contracts to set whitelist

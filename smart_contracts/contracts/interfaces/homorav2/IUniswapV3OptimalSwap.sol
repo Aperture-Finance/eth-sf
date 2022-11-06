@@ -22,11 +22,7 @@ interface IUniswapV3OptimalSwap {
     )
         external
         view
-        returns (
-            uint256 amtSwap,
-            uint256 amtOut,
-            bool isZeroForOne
-        );
+        returns (uint256 amtSwap, uint256 amtOut, bool isZeroForOne);
 
     /// @dev get nearest initialized lower tick and upper tick
     /// @param _pool uniswap v3 pool
