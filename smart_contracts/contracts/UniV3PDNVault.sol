@@ -199,7 +199,7 @@ contract UniV3PDNVault {
             uint256 collateralSize
         )
     {
-        (collToken, collId, collateralSize) = IBank(contractInfo.bank)
+        (, collToken, collId, collateralSize) = IBank(contractInfo.bank)
             .getPositionInfo(position_id);
     }
 
