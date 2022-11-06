@@ -9,6 +9,7 @@ interface IHomoraPDN {
         address router; // DEX's router address
         address spell; // Homora's Spell address
         address optimalSwap;
+        address wrapper; // WUniswapV3Position
     }
 
     // Addresses in the pair

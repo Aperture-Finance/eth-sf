@@ -8,6 +8,7 @@ import "./interfaces/IHomoraPDN.sol";
 import "./interfaces/homorav2/banks/IBank.sol";
 import "./interfaces/homorav2/spells/IUniswapV3Spell.sol";
 import "./interfaces/homorav2/IUniswapV3OptimalSwap.sol";
+import "./interfaces/homorav2/wrappers/IWUniswapV3Position.sol";
 import "./interfaces/uniswapv3/IUniswapV3Pool.sol";
 
 import "./libraries/UniswapV3TickMath.sol";
@@ -52,6 +53,7 @@ contract UniV3PDNVault {
         require(spell != address(0));
         contractInfo.spell = spell;
         contractInfo.optimalSwap = optimalSwap;
+        contractInfo.wrapper = IUniswapV3Spell(spell).wrapper();
         address bank = IUniswapV3Spell(spell).bank();
         contractInfo.bank = bank;
         contractInfo.oracle = IBank(bank).oracle();
@@ -181,6 +183,13 @@ contract UniV3PDNVault {
         emit LogDeposit();
     }
 
+    struct ClosePositionParams {
+        uint256 amt0Min; // minimum amount of token0 gain after remove liquidity and repay debt.
+        uint256 amt1Min; // minimum amount of token1 gain after remove liquidity and repay debt.
+        uint256 deadline; // deadline for decreaseLiquidity.
+        bool convertWETH; // convert weth to eth or not (true -> convert to eth)
+    }
+
     function withdraw(uint256 amount) external {
         // Call library to finish core withdraw function.
     }
@@ -189,8 +198,7 @@ contract UniV3PDNVault {
 
     function reinvest() external {}
 
-    /// @notice Vault position on Homora
-    function getPositionInfo(address user)
+    function getHomoraPositionInfo(address user)
         public
         view
         returns (
@@ -201,6 +209,15 @@ contract UniV3PDNVault {
     {
         (, collToken, collId, collateralSize) = IBank(contractInfo.bank)
             .getPositionInfo(positions[user]);
+    }
+
+    function getUniV3PositionInfo(address user)
+        public
+        view
+        returns (IWUniswapV3Position.PositionInfo memory)
+    {
+        (, uint256 collId, ) = getHomoraPositionInfo(user);
+        return IWUniswapV3Position(contractInfo.wrapper).getPositionInfoFromTokenId(collId);
     }
 
     function getCollateralETHValue(address user) public view returns (uint256) {
@@ -214,6 +231,9 @@ contract UniV3PDNVault {
     /// @notice Calculate the debt ratio as seen by Homora Bank, multiplied by 1e4
     function getDebtRatio(address user) external view returns (uint16) {
         return
-            uint16((getBorrowETHValue(user) * MAX_BPS) / getCollateralETHValue(user));
+            uint16(
+                (getBorrowETHValue(user) * MAX_BPS) /
+                    getCollateralETHValue(user)
+            );
     }
 }
