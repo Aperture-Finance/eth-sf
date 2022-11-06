@@ -101,6 +101,7 @@ contract UniV3PDNVault {
         uint256 amtAUser,
         uint256 amtBUser
     ) internal view returns (IUniswapV3Spell.OpenPositionParams memory params) {
+        params.fee = 500;
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
         int24 tickUpper = UniswapV3TickMath.getTickAtSqrtRatio(
