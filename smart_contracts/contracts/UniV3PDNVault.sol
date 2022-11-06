@@ -18,9 +18,9 @@ contract UniV3PDNVault {
 
     // --- constants ---
     uint256 public constant X96 = 2**96;
-    uint256 public constant MAX_BPS = 10000;
-    uint256 public constant SQRT_MAX_BPS = 100;
-    uint256 public constant TWO_MAX_BPS = 20000;
+    uint16 public constant MAX_BPS = 10000;
+    uint16 public constant SQRT_MAX_BPS = 100;
+    uint16 public constant TWO_MAX_BPS = 20000;
 
     // --- config ---
     IHomoraPDN.PairInfo public pairInfo;
@@ -94,24 +94,6 @@ contract UniV3PDNVault {
         return amount.mulDiv(X96, sqrtPriceBx96).mulDiv(X96, sqrtPriceBx96);
     }
 
-    struct OpenPositionParams {
-        address token0; // token0 of the pool.
-        address token1; // token1 of the pool.
-        uint24 fee; // pool fee.
-        int24 tickLower; // tickLower
-        int24 tickUpper; // tickUpper
-        uint256 amt0User; // token0 amount that user provides.
-        uint256 amt1User; // token1 amount that user provides.
-        uint256 amt0Borrow; // token0 amount that user borrows.
-        uint256 amt1Borrow; // token1 amount that user borrows.
-        uint256 amt0Min; // minimum amount of token0 being used to provide liquidity.
-        uint256 amt1Min; // minimum amount of token1 being used to provide liquidity.
-        uint256 amtInOptimalSwap; // amount of tokens being used in swap for optimal deposit.
-        uint256 amtOutMinOptimalSwap; // expected amount out for optimal deposit.
-        bool isZeroForOneSwap; // do we swap token0 to token1 for optimal deposit.
-        uint256 deadline; // deadline for increaseLiquidity and swap.
-    }
-
     function deltaNeutralMath(
         uint16 priceRatioBps,
         uint256 amtAUser,
@@ -121,10 +103,10 @@ contract UniV3PDNVault {
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
         int24 tickUpper = UniswapV3TickMath.getTickAtSqrtRatio(
-            uint160((sqrtPriceX96 * Math.sqrt(priceRatioBps)) / SQRT_MAX_BPS)
+            sqrtPriceX96 * uint160(Math.sqrt(priceRatioBps)) / SQRT_MAX_BPS
         );
         int24 tickLower = UniswapV3TickMath.getTickAtSqrtRatio(
-            uint160((sqrtPriceX96 * SQRT_MAX_BPS) / Math.sqrt(priceRatioBps))
+            sqrtPriceX96 * SQRT_MAX_BPS / uint160(Math.sqrt(priceRatioBps))
         );
         uint256 equity = amtAUser;
         if (pairInfo.stableToken == pool.token0()) {
