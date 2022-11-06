@@ -18,6 +18,9 @@ module.exports = {
     "function setWhitelistUsers(address[],bool[])",
     "function setCreditLimits(tuple(address,address,uint256,address)[])",
     "function bankStatus() view returns (uint256)",
+    "function allowBorrowStatus() view returns (bool)",
+    "function setExec(address)",
+    "function exec() view returns (address)",
   ],
   OPTIMAL_SWAP_ABI: [
     "function getOptimalSwapAmt(address, uint256, uint256, int24, int24) view returns (uint256, uint256, bool)",
