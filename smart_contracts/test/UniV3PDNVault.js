@@ -14,98 +14,41 @@ const {
   ERC20_ABI,
 } = require("../constants");
 
-const provider = ethers.provider;
-
 describe("UniV3PDNVault", function () {
   it("open position", async function () {
-    // const Vault = await ethers.getContractFactory("UniV3PDNVault");
-    // const vault = await Vault.deploy();
-
-    const multiplier = 100;
-    const bank = new ethers.Contract(BANK_ADDR, BANK_ABI, provider);
-
-    // const wallet = new ethers.Wallet(ETH_PRV_KEY_1, provider);
     const wallet = await ethers.getImpersonatedSigner(
       "0xa3f45e619cE3AAe2Fa5f8244439a66B203b78bCc"
     );
+
+    const homoraBank = new ethers.Contract(BANK_ADDR, BANK_ABI, ethers.provider);
+    const homoraBankGovernor = await homoraBank.governor();
+    console.log("governor: ", homoraBankGovernor);
+    const governorSigner = await ethers.getImpersonatedSigner(homoraBankGovernor);
+
+    await wallet.sendTransaction({
+      to: homoraBankGovernor,
+      value: ethers.utils.parseEther("100"),
+    });
+
+    // await homoraBank.connect(wallet).setAllowContractCalls(true);
+    // console.log("set allow contract calls");
+    const allowContractCallsResult = await homoraBank.allowContractCalls();
+    console.log("allowContractCallsResult: ", allowContractCallsResult);
+
+    const Vault = await ethers.getContractFactory("UniV3PDNVault");
+    const vault = await Vault.deploy(SPELL_ADDR, USDC_ADDR, WETH_ADDR, USDC_ETH_POOL_ADDR, OPTIMAL_SWAP_ADDR);
+    await vault.deployed();
+    console.log(`Vault deployed to address ${vault.address}.`);
+    await vault.setConfig(30000, 0);
+
+    await homoraBank.connect(governorSigner).setWhitelistUsers([vault.address], [true]);
+    console.log("Whitelisted vault.");
+
     // Approve token.
     const USDC = new ethers.Contract(USDC_ADDR, ERC20_ABI, wallet);
-    await USDC.approve(bank.address, BigNumber.from(10).pow(18));
+    await USDC.approve(vault.address, BigNumber.from(10).pow(12));
 
-    const pool = new ethers.Contract(USDC_ETH_POOL_ADDR, POOL_ABI, provider);
-
-    console.log(
-      `token0: ${await pool.token0()}, token1: ${await pool.token1()}`
-    );
-    const [, tick, , , , ,] = await pool.slot0();
-    console.log(tick);
-    const tickSpacing = await pool.tickSpacing();
-    console.log("tick spacing: ", tickSpacing);
-
-    const tickLower = tick - multiplier * tickSpacing;
-    const tickUpper = tick + multiplier * tickSpacing;
-    const userSupplyTokenA = BigNumber.from(10).pow(18).mul(0);
-    const userSupplyTokenB = BigNumber.from(10).pow(6).mul(1000);
-    const optimalSwap = new ethers.Contract(
-      OPTIMAL_SWAP_ADDR,
-      OPTIMAL_SWAP_ABI,
-      provider
-    );
-    const [amtSwap, amtOut, isZeroForOne] = await optimalSwap.getOptimalSwapAmt(
-      pool.address,
-      userSupplyTokenA.add(userSupplyTokenA),
-      userSupplyTokenB.add(userSupplyTokenB),
-      tickLower,
-      tickUpper
-    );
-
-    console.log(
-      `amtSwap: ${amtSwap.toString()}, amtOut: ${amtOut.toString()}, isZeroForOne: ${isZeroForOne}`
-    );
-
-    const openParams = [
-      WETH_ADDR,
-      USDC_ADDR,
-      500, // fee
-      tickLower,
-      tickUpper,
-      userSupplyTokenA,
-      userSupplyTokenB,
-      userSupplyTokenA,
-      userSupplyTokenB,
-      0,
-      0,
-      amtSwap,
-      amtOut,
-      isZeroForOne,
-      BigNumber.from(
-        "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-      ),
-    ];
-
-    console.log("openParams:", openParams);
-
-    const posId = 0;
-    const encodedOpenData = ethers.utils.defaultAbiCoder.encode(
-      [
-        "address",
-        "address",
-        "uint24",
-        "int24",
-        "int24",
-        "uint",
-        "uint",
-        "uint",
-        "uint",
-        "uint",
-        "uint",
-        "uint",
-        "uint",
-        "bool",
-        "uint",
-      ],
-      openParams
-    );
-    await bank.connect(wallet).execute(posId, SPELL_ADDR, encodedOpenData);
+    // Open position.
+    await vault.connect(wallet).deposit(13000, BigNumber.from(10).pow(6).mul(1000));
   });
 });
