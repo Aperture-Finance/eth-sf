@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.16 <0.9.0;
 
+import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -113,6 +115,7 @@ contract UniV3PDNVault {
         params.fee = 500;
         IUniswapV3Pool pool = IUniswapV3Pool(pairInfo.lpToken);
         uint160 sqrtPriceX96 = uniSqrtPriceX96(pool);
+        console.log("sqrtPriceX96", sqrtPriceX96);
         int24 tickUpper = UniswapV3TickMath.getTickAtSqrtRatio(
             (sqrtPriceX96 * uint160(Math.sqrt(priceRatioBps))) / SQRT_MAX_BPS
         );
@@ -130,17 +133,18 @@ contract UniV3PDNVault {
                 ((vaultConfig.leverageLevel - TWO_MAX_BPS) * equity) /
                 vaultConfig.leverageLevel;
             params.amt1Borrow = divSquareX96(
-                (vaultConfig.leverageLevel * equity) / 2,
+                (vaultConfig.leverageLevel * equity) / TWO_MAX_BPS,
                 sqrtPriceX96
             );
         } else {
+            require(pairInfo.stableToken == pool.token1(), "Wrong pool");
             params.token0 = pairInfo.assetToken;
             params.token1 = pairInfo.stableToken;
             params.amt0User = amtBUser;
             params.amt1User = amtAUser;
             equity += divSquareX96(amtBUser, sqrtPriceX96);
             params.amt0Borrow = mulSquareX96(
-                (vaultConfig.leverageLevel * equity) / 2,
+                (vaultConfig.leverageLevel * equity) / TWO_MAX_BPS,
                 sqrtPriceX96
             );
             params.amt1Borrow =
@@ -185,6 +189,11 @@ contract UniV3PDNVault {
             stableDepositAmount,
             0
         );
+        console.log("amt0User", params.amt0User);
+        console.log("amt1User", params.amt1User);
+        console.log("amt0Borrow", params.amt0Borrow);
+        console.log("amt1Borrow", params.amt1Borrow);
+
         uint256 position_id = IBank(contractInfo.bank).execute(
             positions[msg.sender],
             contractInfo.spell,

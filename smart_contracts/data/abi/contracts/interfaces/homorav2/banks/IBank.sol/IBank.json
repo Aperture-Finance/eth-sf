@@ -16,8 +16,8 @@
   "function borrowBalanceCurrent(uint256,address) returns (uint256)",
   "function borrowBalanceStored(uint256,address) view returns (uint256)",
   "function cTokenInBank(address) view returns (bool)",
-  "function everWhitelistedUsers(address) returns (address)",
-  "function exec() returns (address)",
+  "function everWhitelistedUsers(address) view returns (address)",
+  "function exec() view returns (address)",
   "function execute(uint256,address,bytes) returns (uint256)",
   "function getBankInfo(address) view returns (bool, address, uint256, uint256, uint256)",
   "function getBorrowETHValue(uint256) view returns (uint256)",
@@ -48,9 +48,9 @@
   "function transmit(address,uint256)",
   "function whitelistedSpells(address) view returns (bool)",
   "function whitelistedTokens(address) view returns (bool)",
-  "function whitelistedUserBorrowShares(address,address) returns (uint256)",
-  "function whitelistedUserCreditLimits(address,address) returns (uint256)",
+  "function whitelistedUserBorrowShares(address,address) view returns (uint256)",
+  "function whitelistedUserCreditLimits(address,address) view returns (uint256)",
   "function whitelistedUsers(address) view returns (bool)",
   "function withdrawReserve(address,uint256)",
-  "function worker() returns (address)"
+  "function worker() view returns (address)"
 ]

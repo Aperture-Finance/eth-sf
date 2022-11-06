@@ -10,6 +10,7 @@ module.exports = {
   ],
   BANK_ABI: [
     "function execute(uint256,address,bytes memory) returns (uint256)",
+    "function exec() returns (address)",
     "function governor() view returns (address)",
     "function setAllowContractCalls(bool)",
     "function allowContractCalls() view returns (bool)",
